@@ -5,8 +5,6 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
@@ -37,12 +35,12 @@ set(BOOST_INCLUDE_LIBRARIES multiprecision)
 set(BOOST_ENABLE_CMAKE ON)
 
 FetchContent_Declare(
-	Boost
-	URL https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.7z
-	USES_TERMINAL_DOWNLOAD TRUE 
-	GIT_PROGRESS TRUE   
-	DOWNLOAD_NO_EXTRACT FALSE
-	SYSTEM
+    Boost
+    URL https://github.com/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.7z
+    USES_TERMINAL_DOWNLOAD TRUE 
+    GIT_PROGRESS TRUE   
+    DOWNLOAD_NO_EXTRACT FALSE
+    SYSTEM
 )
 FetchContent_MakeAvailable(Boost)
 
@@ -93,6 +91,7 @@ set(suse_sources
 	src/summary_selector_impl.hpp
 )
 
+find_package(Boost REQUIRED)
 add_executable(regex_compiler
 
 	${suse_sources}
@@ -109,7 +108,9 @@ target_compile_definitions(regex_compiler PRIVATE DOCTEST_CONFIG_DISABLE)
 
 target_link_libraries(regex_compiler PRIVATE fmt::fmt doctest cxxopts)
 set_property(TARGET regex_compiler PROPERTY CXX_STANDARD 20)
+set_property(TARGET regex_compiler PROPERTY CXX_STANDARD_REQUIRED ON)
 
+find_package(Boost REQUIRED)
 add_executable(summary_selector
 
 	${suse_sources}
@@ -125,10 +126,12 @@ endif()
 
 target_compile_definitions(summary_selector PRIVATE DOCTEST_CONFIG_DISABLE)
 
-target_link_libraries(summary_selector PRIVATE fmt::fmt Boost::multiprecision doctest cxxopts)
+target_link_libraries(summary_selector PRIVATE fmt::fmt Boost::headers doctest cxxopts)
 set_property(TARGET summary_selector PROPERTY CXX_STANDARD 20)
+set_property(TARGET summary_selector PROPERTY CXX_STANDARD_REQUIRED ON)
 
 file(GLOB test_sources CONFIGURE_DEPENDS src/*.tests.cpp)
+find_package(Boost REQUIRED)
 add_executable(tests
 
 	${suse_sources}
@@ -136,10 +139,12 @@ add_executable(tests
 
 	src/test_main.cpp
 )
-target_link_libraries(tests PRIVATE fmt::fmt Boost::multiprecision doctest)
+target_link_libraries(tests PRIVATE fmt::fmt Boost::headers doctest)
 set_property(TARGET tests PROPERTY CXX_STANDARD 20)
+set_property(TARGET tests PROPERTY CXX_STANDARD_REQUIRED ON)
 
 file(GLOB benchmark_sources CONFIGURE_DEPENDS src/*.bench.cpp)
+find_package(Boost REQUIRED)
 add_executable(benchmarks
 
 	${suse_sources}
@@ -147,10 +152,11 @@ add_executable(benchmarks
 
 	src/benchmark_main.cpp
 )
-target_link_libraries(benchmarks PRIVATE fmt::fmt Boost::multiprecision doctest nanobench)
+target_link_libraries(benchmarks PRIVATE fmt::fmt Boost::headers doctest nanobench)
 set_property(TARGET benchmarks PROPERTY CXX_STANDARD 20)
+set_property(TARGET benchmarks PROPERTY CXX_STANDARD_REQUIRED ON)
 
-
+find_package(Boost REQUIRED)
 add_executable(match_enumerator
 
 	${suse_sources}
@@ -165,8 +171,9 @@ endif()
 
 target_compile_definitions(match_enumerator PRIVATE DOCTEST_CONFIG_DISABLE)
 
-target_link_libraries(match_enumerator PRIVATE fmt::fmt Boost::multiprecision cxxopts)
+target_link_libraries(match_enumerator PRIVATE fmt::fmt Boost::headers cxxopts)
 set_property(TARGET match_enumerator PROPERTY CXX_STANDARD 20)
+set_property(TARGET match_enumerator PROPERTY CXX_STANDARD_REQUIRED ON)
 
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/append_to_report.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
