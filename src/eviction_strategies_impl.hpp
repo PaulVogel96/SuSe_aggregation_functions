@@ -85,7 +85,7 @@ std::optional<std::size_t> suse<counter_type,factor_type>::select(const selector
 
 		auto benefit = current_benefit(selector,event.state_counter);
 		if(idx>=window.start_idx)
-			benefit += expected_future_benefit(selector,window.per_event_counters[idx-window.start_idx],min_time_left,max_time_left);
+			benefit += expected_future_benefit(selector, window.per_event_number_counters[idx-window.start_idx], min_time_left,max_time_left);
 
 		if(!lowest_benefit || benefit<*lowest_benefit)
 		{
@@ -94,7 +94,7 @@ std::optional<std::size_t> suse<counter_type,factor_type>::select(const selector
 		}
 	}
 	
-	const auto new_counters = advance(selector.active_counts(),selector.automaton(), new_event.type);
+	const auto new_counters = advance(selector.active_counts(), selector.automaton(), new_event.type);
 	auto newest_init_time = is_initiator(new_event.type)?new_event.timestamp:events[newest_initiator].cached_event.timestamp;
 	const auto min_time_used = selector.current_time() - newest_init_time;
 	const auto max_time_used = selector.current_time() - events[oldest_initiator].cached_event.timestamp;

@@ -29,29 +29,53 @@ summary_selector<counter_type>::summary_selector(std::string_view query, std::si
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_contained_complete_matches() const
 {
-	return number_of_complete_matches(total_number_counter_);
+	return sum_counter_values_of_complete_matches(total_number_counter_);
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_contained_partial_matches() const
 {
-	return number_of_partial_matches(total_number_counter_);
+	return sum_counter_values_of_partial_matches(total_number_counter_);
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_detected_complete_matches() const
 {
-	return number_of_complete_matches(total_detected_number_counter_);
+	return sum_counter_values_of_complete_matches(total_detected_number_counter_);
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_detected_partial_matches() const
 {
-	return number_of_partial_matches(total_detected_number_counter_);
+	return sum_counter_values_of_partial_matches(total_detected_number_counter_);
 }
 
 template <typename counter_type>
-counter_type summary_selector<counter_type>::number_of_complete_matches(const execution_state_counter<counter_type>& counter) const
+counter_type summary_selector<counter_type>::sum_of_contained_complete_matches() const
+{
+	return sum_counter_values_of_complete_matches(total_sum_counter_);
+}
+
+template <typename counter_type>
+counter_type summary_selector<counter_type>::sum_of_contained_partial_matches() const
+{
+	return sum_counter_values_of_partial_matches(total_sum_counter_);
+}
+
+template <typename counter_type>
+counter_type summary_selector<counter_type>::sum_of_detected_complete_matches() const
+{
+	return sum_counter_values_of_complete_matches(total_detected_sum_counter_);
+}
+
+template <typename counter_type>
+counter_type summary_selector<counter_type>::sum_of_detected_partial_matches() const
+{
+	return sum_counter_values_of_partial_matches(total_detected_sum_counter_);
+}
+
+template <typename counter_type>
+counter_type summary_selector<counter_type>::sum_counter_values_of_complete_matches(const execution_state_counter<counter_type>& counter) const
 {
 	assert(counter.size()==automaton.number_of_states());
 	
@@ -66,7 +90,7 @@ counter_type summary_selector<counter_type>::number_of_complete_matches(const ex
 }
 
 template <typename counter_type>
-counter_type summary_selector<counter_type>::number_of_partial_matches(const execution_state_counter<counter_type>& counter) const
+counter_type summary_selector<counter_type>::sum_counter_values_of_partial_matches(const execution_state_counter<counter_type>& counter) const
 {
 	assert(counter.size()==automaton.number_of_states());
 	

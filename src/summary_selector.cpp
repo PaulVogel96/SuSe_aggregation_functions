@@ -98,7 +98,7 @@ namespace
 		counter_type final_number_of_matches, final_number_of_partial_matches;
 		counter_type final_sum_of_matches, final_sum_of_partial_matches;
 		counter_type detected_number_of_matches, detected_number_of_partial_matches;
-		counter_type detected_sum_of_matches, detected_sum_of_patial_matches;
+		counter_type detected_sum_of_matches, detected_sum_of_partial_matches;
 		std::size_t processed_events;
 	};
 	
@@ -164,7 +164,7 @@ namespace
 
 		const auto observed_matches = std::views::transform(result.observations,[](const auto& o)
 		{
-			return o.matches;
+			return o.number_of_matches;
 		});
 
 		fmt::print(out,"\t\"observed_timestamps\": [{}],\n",fmt::join(observed_timestamps,", "));

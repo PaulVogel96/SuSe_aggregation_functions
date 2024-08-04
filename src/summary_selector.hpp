@@ -64,17 +64,14 @@ namespace suse
 		counter_type number_of_detected_complete_matches() const;
 		counter_type number_of_detected_partial_matches() const;
 
-		counter_type number_of_complete_matches(const execution_state_counter<counter_type>& counters) const;
-		counter_type number_of_partial_matches(const execution_state_counter<counter_type>& counters) const;
-
 		counter_type sum_of_contained_complete_matches() const;
 		counter_type sum_of_contained_partial_matches() const;
 
 		counter_type sum_of_detected_complete_matches() const;
 		counter_type sum_of_detected_partial_matches() const;
 
-		counter_type sum_of_complete_matches(const execution_state_counter<counter_type>& counters) const;
-		counter_type sum_of_partial_matches(const execution_state_counter<counter_type>& counters) const;
+		counter_type sum_counter_values_of_complete_matches(const execution_state_counter<counter_type>& counters) const;
+		counter_type sum_counter_values_of_partial_matches(const execution_state_counter<counter_type>& counters) const;
 
 		const auto& automaton() const { return automaton_; }
 		auto time_window_size() const { return active_window_.per_event_number_counters.capacity(); }
