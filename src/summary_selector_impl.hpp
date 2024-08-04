@@ -17,8 +17,10 @@ summary_selector<counter_type>::summary_selector(std::string_view query, std::si
 	per_character_edges_{compute_edges_per_character(automaton_)},
 	time_to_live_{time_to_live},
 	cache_{},
-	total_counter_{automaton_.number_of_states()},
-	total_detected_counter_{automaton_.number_of_states()},
+	total_number_counter_{automaton_.number_of_states()},
+	total_detected_number_counter_{automaton_.number_of_states()},
+	total_sum_counter_{ automaton_.number_of_states() },
+	total_detected_sum_counter_{ automaton_.number_of_states() },
 	active_window_{create_window_info(time_window_size)}
 {
 	cache_.reserve(summary_size);
@@ -27,25 +29,25 @@ summary_selector<counter_type>::summary_selector(std::string_view query, std::si
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_contained_complete_matches() const
 {
-	return number_of_complete_matches(total_counter_);
+	return number_of_complete_matches(total_number_counter_);
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_contained_partial_matches() const
 {
-	return number_of_partial_matches(total_counter_);
+	return number_of_partial_matches(total_number_counter_);
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_detected_complete_matches() const
 {
-	return number_of_complete_matches(total_detected_counter_);
+	return number_of_complete_matches(total_detected_number_counter_);
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::number_of_detected_partial_matches() const
 {
-	return number_of_partial_matches(total_detected_counter_);
+	return number_of_partial_matches(total_detected_number_counter_);
 }
 
 template <typename counter_type>
@@ -115,7 +117,7 @@ void summary_selector<counter_type>::remove_event(std::size_t cache_index)
 {
 	assert(cache_index<cache_.size());
 	
-	total_counter_-=cache_[cache_index].state_counter;
+	total_number_counter_ -= cache_[cache_index].state_counter;
 	const auto removed_timestamp = timestamp_at(cache_index);
 	if(cache_index<active_window_.start_idx)
 		--active_window_.start_idx;
@@ -189,8 +191,8 @@ void summary_selector<counter_type>::add_event(const event& new_event)
 {
 	auto global_counter_change = advance(active_window_.total_number_counter, per_character_edges_, new_event.type);
 	active_window_.total_number_counter += global_counter_change;
-	total_counter_ += global_counter_change;
-	total_detected_counter_+=global_counter_change;
+	total_number_counter_ += global_counter_change;
+	total_detected_number_counter_+=global_counter_change;
 
 	const auto active_window_size = cache_.size() - active_window_.start_idx;
 	for(std::size_t i=0; i<active_window_size;++i)
@@ -212,7 +214,7 @@ void summary_selector<counter_type>::purge_expired()
 	std::size_t purge_until = 0;
 	while(purge_until<cache_.size() && current_time()-cache_[purge_until].cached_event.timestamp>time_to_live_)
 	{
-		total_counter_-=cache_[purge_until].state_counter;
+		total_number_counter_-=cache_[purge_until].state_counter;
 		const auto removed_timestamp = timestamp_at(purge_until);
 		cache_[purge_until].cached_event.timestamp = std::numeric_limits<std::size_t>::max(); //dirty hack to make the replay ignore this event
 		std::fill(cache_[purge_until].state_counter.begin(),cache_[purge_until].state_counter.end(),0);
@@ -332,12 +334,13 @@ bool summary_selector<counter_type>::in_shared_window(std::size_t timestamp0, st
 template <typename counter_type>
 bool operator==(const summary_selector<counter_type>& lhs, const summary_selector<counter_type>& rhs)
 {
-	if(lhs.per_character_edges_!=rhs.per_character_edges_) return false;
-	if(lhs.cache_!=rhs.cache_) return false;
-	if(lhs.total_counter_!=rhs.total_counter_) return false;
-	if(lhs.current_time_!=rhs.current_time_) return false;
+	if (lhs.per_character_edges_ != rhs.per_character_edges_) return false;
+	if (lhs.cache_ != rhs.cache_) return false;
+	if (lhs.total_number_counter_ != rhs.total_number_counter_) return false;
+	if (lhs.total_sum_counter_ != rhs.total_sum_counter_) return false;
+	if (lhs.current_time_ != rhs.current_time_) return false;
 
-	return lhs.active_window_==rhs.active_window_;
+	return lhs.active_window_ == rhs.active_window_;
 }
 
 }

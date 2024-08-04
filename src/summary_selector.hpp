@@ -53,8 +53,8 @@ namespace suse
 
 		auto cached_events() const { return std::span{cache_.begin(),cache_.end()}; }
 		const auto& active_window() const { return active_window_; }
-		const auto& total_counts() const { return total_counter_; }
-		const auto& active_counts() const { return active_window_.total_counter; }
+		const auto& total_counts() const { return total_number_counter_; }
+		const auto& active_counts() const { return active_window_.total_number_counter; }
 
 		auto current_time() const { return current_time_; }
 
@@ -104,8 +104,8 @@ namespace suse
 			friend auto operator<=>(const window_info&, const window_info&) = default;
 		};
 		
-		execution_state_counter<counter_type> total_counter_, total_detected_counter_;
-		execution_state_counter<counter_type> total_sum_counter, total_detected_sum_counter;
+		execution_state_counter<counter_type> total_number_counter_, total_detected_number_counter_;
+		execution_state_counter<counter_type> total_sum_counter_, total_detected_sum_counter_;
 		window_info active_window_;
 
 		std::size_t current_time_{0};
