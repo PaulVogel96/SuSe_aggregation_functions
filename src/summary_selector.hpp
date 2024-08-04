@@ -77,7 +77,7 @@ namespace suse
 		counter_type sum_of_partial_matches(const execution_state_counter<counter_type>& counters) const;
 
 		const auto& automaton() const { return automaton_; }
-		auto time_window_size() const { return active_window_.per_event_counters.capacity(); }
+		auto time_window_size() const { return active_window_.per_event_number_counters.capacity(); }
 
 		private:
 		nfa automaton_;
@@ -95,9 +95,10 @@ namespace suse
 
 		struct window_info
 		{
-			execution_state_counter<counter_type> total_counter;
+			execution_state_counter<counter_type> total_number_counter;
 			execution_state_counter<counter_type> total_sum_counter;
-			suse::ring_buffer<execution_state_counter<counter_type>> per_event_counters;
+			suse::ring_buffer<execution_state_counter<counter_type>> per_event_number_counters;
+			suse::ring_buffer<execution_state_counter<counter_type>> per_event_sum_counters;
 			std::size_t start_idx;
 
 			friend auto operator<=>(const window_info&, const window_info&) = default;

@@ -17,7 +17,7 @@ namespace suse
 	{
 		public:
 		explicit execution_state_counter(std::size_t number_of_states):
-			counters_(number_of_states,0)
+			counters_(number_of_states, 0)
 		{}
 
 		std::size_t size() const { return counters_.size(); }

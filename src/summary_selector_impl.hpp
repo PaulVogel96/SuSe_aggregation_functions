@@ -164,21 +164,21 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 	{
 		update_window(replay_window,timestamp_at(idx));
 		
-		auto global_counter_change = advance(replay_window.total_counter,per_character_edges_,cache_[idx].cached_event.type);
-		replay_window.total_counter+=global_counter_change;
+		auto global_counter_change = advance(replay_window.total_number_counter, per_character_edges_, cache_[idx].cached_event.type);
+		replay_window.total_number_counter += global_counter_change;
 
 		const auto active_window_size = idx - replay_window.start_idx;
 		for(std::size_t i=0; i<active_window_size;++i)
 		{
 			const auto cache_idx = replay_window.start_idx + i;
 			
-			const auto local_change = advance(replay_window.per_event_counters[i],per_character_edges_,cache_[idx].cached_event.type);
-			if(cache_idx>=replay_start_idx && in_shared_window(removed_timestamp,timestamp_at(cache_idx)))
-				cache_[cache_idx].state_counter+=local_change;
-			replay_window.per_event_counters[i]+=local_change;
+			const auto local_change = advance(replay_window.per_event_number_counters[i], per_character_edges_, cache_[idx].cached_event.type);
+			if(cache_idx>=replay_start_idx && in_shared_window(removed_timestamp, timestamp_at(cache_idx)))
+				cache_[cache_idx].state_counter += local_change;
+			replay_window.per_event_number_counters[i] += local_change;
 		}
 		
-		replay_window.per_event_counters.push_back(global_counter_change);
+		replay_window.per_event_number_counters.push_back(global_counter_change);
 		if(in_shared_window(removed_timestamp,timestamp_at(idx)))
 			cache_[idx].state_counter = std::move(global_counter_change);
 	}
@@ -187,9 +187,9 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 template <typename counter_type>
 void summary_selector<counter_type>::add_event(const event& new_event)
 {
-	auto global_counter_change = advance(active_window_.total_counter,per_character_edges_,new_event.type);
-	active_window_.total_counter+=global_counter_change;
-	total_counter_+=global_counter_change;
+	auto global_counter_change = advance(active_window_.total_number_counter, per_character_edges_, new_event.type);
+	active_window_.total_number_counter += global_counter_change;
+	total_counter_ += global_counter_change;
 	total_detected_counter_+=global_counter_change;
 
 	const auto active_window_size = cache_.size() - active_window_.start_idx;
@@ -197,13 +197,13 @@ void summary_selector<counter_type>::add_event(const event& new_event)
 	{
 		const auto cache_idx = active_window_.start_idx + i;
 		
-		const auto local_change = advance(active_window_.per_event_counters[i],per_character_edges_,new_event.type);
-		cache_[cache_idx].state_counter+=local_change;
-		active_window_.per_event_counters[i]+=local_change;
+		const auto local_change = advance(active_window_.per_event_number_counters[i], per_character_edges_, new_event.type);
+		cache_[cache_idx].state_counter += local_change;
+		active_window_.per_event_number_counters[i] += local_change;
 	}
 	
-	active_window_.per_event_counters.push_back(global_counter_change);
-	cache_.emplace_back(new_event,std::move(global_counter_change));
+	active_window_.per_event_number_counters.push_back(global_counter_change);
+	cache_.emplace_back(new_event, std::move(global_counter_change));
 }
 
 template <typename counter_type>
@@ -247,11 +247,11 @@ void summary_selector<counter_type>::update_window(window_info& window, std::siz
 	const auto& initial_state = automaton_.states()[automaton_.initial_state_id()];
 
 	bool removed_initiator = false;
-	while(!window.per_event_counters.empty() && !in_shared_window(timestamp,timestamp_at(window.start_idx)))
+	while(!window.per_event_number_counters.empty() && !in_shared_window(timestamp, timestamp_at(window.start_idx)))
 	{
 		const auto type = cache_[window.start_idx++].cached_event.type;
 		removed_initiator |= initial_state.transitions.contains(type) || initial_state.transitions.contains(nfa::wildcard_symbol);
-		window.per_event_counters.pop_front();
+		window.per_event_number_counters.pop_front();
 	}
 
 	if(removed_initiator)
@@ -261,7 +261,7 @@ void summary_selector<counter_type>::update_window(window_info& window, std::siz
 template <typename counter_type>
 void summary_selector<counter_type>::replay_time_window(window_info& window) const
 {
-	replay_time_window(window,std::span{cache_.begin()+window.start_idx,window.per_event_counters.size()});
+	replay_time_window(window,std::span{cache_.begin() + window.start_idx, window.per_event_number_counters.size()});
 }
 
 template <typename counter_type>
@@ -272,14 +272,14 @@ void summary_selector<counter_type>::replay_time_window(window_info& window, std
 	for(std::size_t i=0;i<events.size();++i)
 	{
 		const auto to_readd = events[i].cached_event.type;
-		auto global_counter_change = advance(window.total_counter,per_character_edges_,to_readd);
-		window.total_counter+=global_counter_change;
+		auto global_counter_change = advance(window.total_number_counter, per_character_edges_, to_readd);
+		window.total_number_counter += global_counter_change;
 		for(std::size_t j=0;j<i;++j)
 		{
-			const auto local_change = advance(window.per_event_counters[j],per_character_edges_,to_readd);
-			window.per_event_counters[j]+=local_change;
+			const auto local_change = advance(window.per_event_number_counters[j], per_character_edges_, to_readd);
+			window.per_event_number_counters[j] += local_change;
 		}
-		window.per_event_counters.push_back(std::move(global_counter_change));
+		window.per_event_number_counters.push_back(std::move(global_counter_change));
 	}
 }
 
@@ -289,7 +289,9 @@ auto summary_selector<counter_type>::create_window_info(std::size_t window_size)
 	window_info wnd
 	{
 		execution_state_counter<counter_type>{automaton_.number_of_states()},
-		ring_buffer<execution_state_counter<counter_type>>{window_size,execution_state_counter<counter_type>{automaton_.number_of_states()}},
+		execution_state_counter<counter_type>{automaton_.number_of_states()},
+		ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{automaton_.number_of_states()}},
+		ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{automaton_.number_of_states()}},
 		0
 	};
 
@@ -300,9 +302,12 @@ auto summary_selector<counter_type>::create_window_info(std::size_t window_size)
 template <typename counter_type>
 void summary_selector<counter_type>::reset_counters(window_info& window) const
 {
-	window.total_counter*=0; // performance!
-	window.total_counter[automaton_.initial_state_id()] = 1;
-	window.per_event_counters.clear();
+	window.total_number_counter*=0; // performance!
+	window.total_sum_counter *= 0; // performance!
+	window.total_number_counter[automaton_.initial_state_id()] = 1;
+	window.total_sum_counter[automaton_.initial_state_id()] = 1;
+	window.per_event_number_counters.clear();
+	window.per_event_sum_counters.clear();
 }
 
 template <typename counter_type>
@@ -316,7 +321,7 @@ std::size_t summary_selector<counter_type>::timestamp_at(std::size_t cache_idx) 
 template <typename counter_type>
 bool summary_selector<counter_type>::in_shared_window(std::size_t timestamp0, std::size_t timestamp1) const
 {
-	const auto time_window_size = active_window_.per_event_counters.capacity();
+	const auto time_window_size = active_window_.per_event_number_counters.capacity();
 
 	if(timestamp1>timestamp0)
 		std::swap(timestamp0,timestamp1);
