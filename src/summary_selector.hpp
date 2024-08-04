@@ -38,7 +38,12 @@ namespace suse
 	class summary_selector
 	{
 		public:
-		summary_selector(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max());
+		summary_selector(
+			std::string_view query, 
+			std::size_t summary_size, 
+			std::size_t time_window_size, 
+			std::size_t time_to_live = std::numeric_limits<std::size_t>::max()
+		);
 
 		template <eviction_strategy<summary_selector> strategy_type>
 		void process_event(const event& new_event, const strategy_type& strategy);
@@ -62,6 +67,15 @@ namespace suse
 		counter_type number_of_complete_matches(const execution_state_counter<counter_type>& counters) const;
 		counter_type number_of_partial_matches(const execution_state_counter<counter_type>& counters) const;
 
+		counter_type sum_of_contained_complete_matches() const;
+		counter_type sum_of_contained_partial_matches() const;
+
+		counter_type sum_of_detected_complete_matches() const;
+		counter_type sum_of_detected_partial_matches() const;
+
+		counter_type sum_of_complete_matches(const execution_state_counter<counter_type>& counters) const;
+		counter_type sum_of_partial_matches(const execution_state_counter<counter_type>& counters) const;
+
 		const auto& automaton() const { return automaton_; }
 		auto time_window_size() const { return active_window_.per_event_counters.capacity(); }
 
@@ -82,6 +96,7 @@ namespace suse
 		struct window_info
 		{
 			execution_state_counter<counter_type> total_counter;
+			execution_state_counter<counter_type> total_sum_counter;
 			suse::ring_buffer<execution_state_counter<counter_type>> per_event_counters;
 			std::size_t start_idx;
 
@@ -89,6 +104,7 @@ namespace suse
 		};
 		
 		execution_state_counter<counter_type> total_counter_, total_detected_counter_;
+		execution_state_counter<counter_type> total_sum_counter, total_detected_sum_counter;
 		window_info active_window_;
 
 		std::size_t current_time_{0};

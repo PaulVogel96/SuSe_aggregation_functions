@@ -11,6 +11,7 @@ namespace suse
 	{
 		char type;
 		std::size_t timestamp;
+		int value;
 
 		friend constexpr auto operator<=>(const event&, const event&) = default;
 	};

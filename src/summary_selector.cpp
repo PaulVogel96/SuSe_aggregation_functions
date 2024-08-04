@@ -86,7 +86,8 @@ namespace
 
 	struct summary_observation
 	{
-		counter_type matches;
+		counter_type number_of_matches;
+		counter_type sum_of_matches;
 		std::size_t timestamp;
 	};
 	
@@ -94,8 +95,10 @@ namespace
 	{
 		nanoseconds average_latency{0}, max_latency{0}, min_latency = std::chrono::hours{42};
 		std::vector<summary_observation> observations;
-		counter_type final_matches, final_partial_matches;
-		counter_type detected_matches, detected_partial_matches;
+		counter_type final_number_of_matches, final_number_of_partial_matches;
+		counter_type final_sum_of_matches, final_sum_of_partial_matches;
+		counter_type detected_number_of_matches, detected_number_of_partial_matches;
+		counter_type detected_sum_of_matches, detected_sum_of_patial_matches;
 		std::size_t processed_events;
 	};
 	
@@ -107,7 +110,7 @@ namespace
 		for(suse::event next_event; std::cin>>next_event;++result.processed_events)
 		{
 			if(evaluation_timestamps.contains(next_event.timestamp))
-				result.observations.push_back({selector.number_of_contained_complete_matches(),next_event.timestamp});
+				result.observations.push_back({selector.number_of_contained_complete_matches(), selector.sum_of_contained_complete_matches(), next_event.timestamp});
 
 			const auto start = std::chrono::steady_clock::now();
 				selector.process_event(next_event,strategy);
@@ -118,30 +121,41 @@ namespace
 			result.min_latency = std::min(result.min_latency,end-start);
 		}
 		result.average_latency/=result.processed_events;
-		result.final_matches = selector.number_of_contained_complete_matches();
-		result.final_partial_matches = selector.number_of_contained_partial_matches();
+		result.final_number_of_matches = selector.number_of_contained_complete_matches();
+		result.final_number_of_partial_matches = selector.number_of_contained_partial_matches();
 
-		result.detected_matches = selector.number_of_detected_complete_matches();
-		result.detected_partial_matches = selector.number_of_detected_partial_matches();
+		result.final_sum_of_matches = selector.sum_of_contained_complete_matches();
+		result.final_sum_of_partial_matches = selector.sum_of_contained_partial_matches();
 
-		fmt::print("Partial Matches: {}, Complete Matches: {}\n",result.final_partial_matches,result.final_matches);
+		result.detected_number_of_matches = selector.number_of_detected_complete_matches();
+		result.detected_number_of_partial_matches = selector.number_of_detected_partial_matches();
+
+		result.detected_sum_of_matches = selector.sum_of_detected_complete_matches();
+		result.detected_sum_of_partial_matches = selector.sum_of_detected_partial_matches();
+
+		fmt::print("Number of Partial Matches: {}, Number of Complete Matches: {}\n",result.final_number_of_partial_matches, result.final_number_of_matches);
+		fmt::print("Sum of Partial Matches: {}, Sum of Complete Matches: {}\n", result.final_sum_of_partial_matches, result.final_sum_of_matches);
 		return result;
 	}
 
 	void generate_report(const std::filesystem::path& path, nanoseconds init_time, nanoseconds runtime, const run_result& result)
 	{
 		std::ofstream out{path};
-		fmt::print(out,"{{\n");
-		fmt::print(out,"\t\"initialization_time_ns\": {},\n",init_time.count());
-		fmt::print(out,"\t\"runtime_ns\": {},\n",runtime.count());
-		fmt::print(out,"\t\"average_latency_ns\": {},\n",result.average_latency.count());
-		fmt::print(out,"\t\"max_latency_ns\": {},\n",result.max_latency.count());
-		fmt::print(out,"\t\"min_latency_ns\": {},\n",result.min_latency.count());
-		fmt::print(out,"\t\"final_matches\": {},\n",result.final_matches);
-		fmt::print(out,"\t\"final_partial_matches\": {},\n",result.final_partial_matches);
-		fmt::print(out,"\t\"detected_matches\": {},\n",result.detected_matches);
-		fmt::print(out,"\t\"detected_partial_matches\": {},\n",result.detected_partial_matches);
-		fmt::print(out,"\t\"processed_events\": {},\n",result.processed_events);
+		fmt::print(out, "{{\n");
+		fmt::print(out, "\t\"initialization_time_ns\": {},\n", init_time.count());
+		fmt::print(out, "\t\"runtime_ns\": {},\n", runtime.count());
+		fmt::print(out, "\t\"average_latency_ns\": {},\n", result.average_latency.count());
+		fmt::print(out, "\t\"max_latency_ns\": {},\n", result.max_latency.count());
+		fmt::print(out, "\t\"min_latency_ns\": {},\n", result.min_latency.count());
+		fmt::print(out, "\t\"final_number_of_matches\": {},\n", result.final_number_of_matches);
+		fmt::print(out, "\t\"final_number_of_partial_matches\": {},\n", result.final_number_of_partial_matches);
+		fmt::print(out, "\t\"final_sum_of_matches\": {},\n", result.final_sum_of_matches);
+		fmt::print(out, "\t\"final_sum_of_partial_matches\": {},\n", result.final_sum_of_partial_matches);
+		fmt::print(out, "\t\"detected_number_of_matches\": {},\n", result.detected_number_of_matches);
+		fmt::print(out, "\t\"detected_number_of_partial_matches\": {},\n", result.detected_number_of_partial_matches);
+		fmt::print(out, "\t\"detected_sum_of_matches\": {},\n", result.detected_sum_of_matches);
+		fmt::print(out, "\t\"detected_sum_of_partial_matches\": {},\n", result.detected_sum_of_partial_matches);
+		fmt::print(out, "\t\"processed_events\": {},\n", result.processed_events);
 
 		const auto observed_timestamps = std::views::transform(result.observations,[](const auto& o)
 		{
@@ -235,7 +249,7 @@ int main(int argc, char* argv[]) try
 
 	const auto start_time = std::chrono::steady_clock::now();
 	
-	suse::summary_selector<counter_type> selector{query,summary_size,time_window_size,time_to_live};
+	suse::summary_selector<counter_type> selector{query, summary_size, time_window_size, time_to_live};
 
 	const auto measured_run = [&](auto& strategy)
 	{
