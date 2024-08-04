@@ -1,63 +1,32 @@
-# General C++ Ignored Files
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
 *.o
 *.obj
-*.lo
-*.slo
+
+# Precompiled Headers
 *.gch
 *.pch
+
+# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
+
+# Fortran module files
 *.mod
 *.smod
+
+# Compiled Static libraries
+*.lai
 *.la
 *.a
 *.lib
+
+# Executables
 *.exe
 *.out
 *.app
-
-# CMake Generated Files
-CMakeCache.txt
-CMakeFiles/
-CMakeScripts/
-cmake_install.cmake
-CTestTestfile.cmake
-Makefile
-build/
-install_manifest.txt
-
-# Visual Studio Generated Files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-.vs/
-.vs/*
-
-# Windows Specific Files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-MicrosoftEdgeBackups/
-Windows10Upgrade/
-*.cab
-*.msi
-*.msm
-*.msp
-*.lnk
-
-# Additional Ignored Files
-*.log
-*.tmp
-*.temp
-*.bak
-*.swp
-*.swo
-*.swn
-.*.swp
-.*.swo
-*.lock
-.idea/
