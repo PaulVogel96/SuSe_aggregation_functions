@@ -77,22 +77,33 @@ counter_type summary_selector<counter_type>::sum_of_detected_partial_matches() c
 template <typename counter_type>
 counter_type summary_selector<counter_type>::sum_counter_values_of_complete_matches(const execution_state_counter<counter_type>& counter) const
 {
-	assert(counter.size()==automaton.number_of_states());
+	std::cout << "entering sum counter values of complete matches" << std::endl;
+	std::cout << "counter size is:";
+	std::cout << counter.size() << std::endl;
+
+	assert(counter.size() == automaton.number_of_states());
 	
+	std::cout << "counter values are:" << std::endl;
 	counter_type sum{0};
-	for(std::size_t i=0;i<counter.size();++i)
+	for(std::size_t i = 0; i < counter.size(); ++i)
 	{
-		if(automaton_.states()[i].is_final)
-			sum+=counter[i];
+		if (automaton_.states()[i].is_final) {
+			std::cout << "state is final" << std::endl;
+			std::cout << "counter value is: " << counter[i] << std::endl;
+			sum += counter[i];
+		}
+		std::cout << "state is not final" << std::endl;
 	}
 
+	std::cout << "sum is: " << sum << std::endl;
+	std::cout << "-------------------------------------" << std::endl;
 	return sum;
 }
 
 template <typename counter_type>
 counter_type summary_selector<counter_type>::sum_counter_values_of_partial_matches(const execution_state_counter<counter_type>& counter) const
 {
-	assert(counter.size()==automaton.number_of_states());
+	assert(counter.size() == automaton.number_of_states());
 	
 	counter_type sum{0};
 	for(std::size_t i=0;i<counter.size();++i)
@@ -190,7 +201,7 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 	{
 		update_window(replay_window,timestamp_at(idx));
 		
-		auto global_counter_change = advance(replay_window.total_number_counter, per_character_edges_, cache_[idx].cached_event.type);
+		auto global_counter_change = advance(replay_window.total_number_counter, per_character_edges_, cache_[idx].cached_event);
 		replay_window.total_number_counter += global_counter_change;
 
 		const auto active_window_size = idx - replay_window.start_idx;
@@ -198,7 +209,7 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 		{
 			const auto cache_idx = replay_window.start_idx + i;
 			
-			const auto local_change = advance(replay_window.per_event_number_counters[i], per_character_edges_, cache_[idx].cached_event.type);
+			const auto local_change = advance(replay_window.per_event_number_counters[i], per_character_edges_, cache_[idx].cached_event);
 			if(cache_idx>=replay_start_idx && in_shared_window(removed_timestamp, timestamp_at(cache_idx)))
 				cache_[cache_idx].state_counter += local_change;
 			replay_window.per_event_number_counters[i] += local_change;
@@ -213,7 +224,7 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 template <typename counter_type>
 void summary_selector<counter_type>::add_event(const event& new_event)
 {
-	auto global_counter_change = advance(active_window_.total_number_counter, per_character_edges_, new_event.type);
+	auto global_counter_change = advance(active_window_.total_number_counter, per_character_edges_, new_event);
 	active_window_.total_number_counter += global_counter_change;
 	total_number_counter_ += global_counter_change;
 	total_detected_number_counter_+=global_counter_change;
@@ -223,7 +234,7 @@ void summary_selector<counter_type>::add_event(const event& new_event)
 	{
 		const auto cache_idx = active_window_.start_idx + i;
 		
-		const auto local_change = advance(active_window_.per_event_number_counters[i], per_character_edges_, new_event.type);
+		const auto local_change = advance(active_window_.per_event_number_counters[i], per_character_edges_, new_event);
 		cache_[cache_idx].state_counter += local_change;
 		active_window_.per_event_number_counters[i] += local_change;
 	}
@@ -297,7 +308,7 @@ void summary_selector<counter_type>::replay_time_window(window_info& window, std
 
 	for(std::size_t i=0;i<events.size();++i)
 	{
-		const auto to_readd = events[i].cached_event.type;
+		const auto to_readd = events[i].cached_event;
 		auto global_counter_change = advance(window.total_number_counter, per_character_edges_, to_readd);
 		window.total_number_counter += global_counter_change;
 		for(std::size_t j=0;j<i;++j)

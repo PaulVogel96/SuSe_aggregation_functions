@@ -14,11 +14,11 @@ TEST_SUITE("suse::eviction_strategies")
 		const std::string_view input = "abcdefghijklmnopqrstuvwxyz";
 		
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++},suse::eviction_strategies::fifo);
+			selector.process_event({c, idx++, 0},suse::eviction_strategies::fifo);
 
 		suse::summary_selector<int> correct_selector{"abc",3,3};
 		for(std::size_t idx=23; auto c: input.substr(23))
-			correct_selector.process_event({c,idx++});
+			correct_selector.process_event({c, idx++, 0});
 
 		CHECK(selector==correct_selector);
 	}

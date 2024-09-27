@@ -3,6 +3,7 @@
 
 #include "edgelist.hpp"
 #include "nfa.hpp"
+#include "event.hpp"
 
 #include <type_traits>
 #include <unordered_map>
@@ -62,10 +63,10 @@ namespace suse
 	};
 
 	template <typename underlying_counter_type>
-	execution_state_counter<underlying_counter_type> advance(const execution_state_counter<underlying_counter_type>& counter, const nfa& automaton, char symbol);
+	execution_state_counter<underlying_counter_type> advance(const execution_state_counter<underlying_counter_type>& counter, const nfa& automaton, suse::event new_event);
 
 	template <typename underlying_counter_type>
-	execution_state_counter<underlying_counter_type> advance(const execution_state_counter<underlying_counter_type>& counter, const edgelist& per_character_edges, char symbol);
+	execution_state_counter<underlying_counter_type> advance(const execution_state_counter<underlying_counter_type>& counter, const edgelist& per_character_edges, suse::event new_event);
 }
 
 #include "execution_state_counter_impl.hpp"

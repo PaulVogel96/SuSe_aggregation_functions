@@ -19,8 +19,11 @@ TEST_SUITE("suse::execution_state_counter")
 			auto counter = suse::execution_state_counter<int>(sample.number_of_states());
 			counter[sample.initial_state_id()] = 1;
 
-			for(auto c: input)
-				counter = advance(counter,sample,c);
+			for (std::size_t idx = 0; idx < input.length(); idx += 1) 
+			{
+				char c = input[idx];
+				counter = advance(counter, sample, { c, idx, 0 });
+			}
 
 			for(std::size_t i=0;i<sample.number_of_states();++i)
 			{
@@ -55,8 +58,11 @@ TEST_SUITE("suse::execution_state_counter")
 			auto counter = suse::execution_state_counter<int>(sample.number_of_states());
 			counter[sample.initial_state_id()] = 1;
 
-			for(auto c: input)
-				counter = advance(counter,sample,c);
+			for (std::size_t idx = 0; idx < input.length(); idx += 1)
+			{
+				char c = input[idx];
+				counter = advance(counter, sample, { c, idx, 0 });
+			}
 
 			for(std::size_t i=0;i<sample.number_of_states();++i)
 			{
@@ -74,8 +80,11 @@ TEST_SUITE("suse::execution_state_counter")
 			auto counter = suse::execution_state_counter<int>(sample.number_of_states());
 			counter[sample.initial_state_id()] = 1;
 
-			for(auto c: input)
-				counter = advance(counter,edgelist,c);
+			for (std::size_t idx = 0; idx < input.length(); idx += 1)
+			{
+				char c = input[idx];
+				counter = advance(counter, sample, { c, idx, 0 });
+			}
 
 			for(std::size_t i=0;i<sample.number_of_states();++i)
 			{

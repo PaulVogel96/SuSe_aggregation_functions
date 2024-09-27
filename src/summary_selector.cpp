@@ -113,7 +113,7 @@ namespace
 				result.observations.push_back({selector.number_of_contained_complete_matches(), selector.sum_of_contained_complete_matches(), next_event.timestamp});
 
 			const auto start = std::chrono::steady_clock::now();
-				selector.process_event(next_event,strategy);
+				selector.process_event(next_event, strategy);
 			const auto end = std::chrono::steady_clock::now();
 
 			result.average_latency+=end-start;

@@ -11,7 +11,7 @@ TEST_SUITE("suse::summary_selector")
 		suse::summary_selector<int> selector("a(b|c)d?e",10,10);
 
 		for(std::size_t idx=0; auto c: "abcde")
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 
 		CHECK(selector.number_of_contained_complete_matches()==4);
 	}
@@ -21,7 +21,7 @@ TEST_SUITE("suse::summary_selector")
 		suse::summary_selector<int> selector("a(b|c)+d?e",10,10);
 
 		for(std::size_t idx=0; auto c: "aabcde")
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 
 		CHECK(selector.number_of_contained_complete_matches()==12);
 	}
@@ -32,7 +32,7 @@ TEST_SUITE("suse::summary_selector")
 		
 		suse::summary_selector<boost::multiprecision::cpp_int> selector("a(b|c)+d?e",input.size(),input.size());
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 
 		CHECK(selector.number_of_contained_complete_matches()==boost::multiprecision::cpp_int{"513920788981887762029269814291248651974076116"});
 	}
@@ -45,7 +45,7 @@ TEST_SUITE("suse::summary_selector")
 
 		suse::summary_selector<int_type> selector("a*b(c|d)*e",input.size(),253);
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 
 		CHECK(selector.number_of_contained_complete_matches()==int_type{"133190355408367558081362438558651296"});
 	}
@@ -65,21 +65,21 @@ TEST_SUITE("suse::summary_selector")
 			for(std::size_t idx=0; auto c: input)
 			{
 				if(idx!=to_delete)
-					correct_selector.process_event({c,idx++});
+					correct_selector.process_event({c, idx++, 0});
 				else
 					++idx;
 			}
 	
 			for(std::size_t idx=0; auto c: input)
-				selector.process_event({c,idx++});
+				selector.process_event({c, idx++, 0});
 			selector.remove_event(to_delete);
 
 			// Add one more element to align the timestamps/windows
 			// otherwise the comparison fails when deleting the very last element
 			// as adding and removing again moves the window and does therefore (correctly)
 			// not produce the same state as doing nothing 
-			correct_selector.process_event({'x',input.size()+10});
-			selector.process_event({'x',input.size()+10});
+			correct_selector.process_event({'x', input.size()+10, 0});
+			selector.process_event({'x', input.size()+10, 0});
 
 			REQUIRE(selector==correct_selector);
 		}
@@ -97,13 +97,13 @@ TEST_SUITE("suse::summary_selector")
 		for(std::size_t idx=0; auto c: input)
 		{
 			if(idx!=to_delete)
-				correct_selector.process_event({c,idx++});
+				correct_selector.process_event({c, idx++, 0});
 			else
 				++idx;
 		}
 
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 		selector.remove_event(to_delete);
 
 		REQUIRE(selector==correct_selector);
@@ -125,13 +125,13 @@ TEST_SUITE("suse::summary_selector")
 		for(std::size_t idx=0; auto c: input)
 		{
 			if(idx!=to_delete)
-				correct_selector.process_event({c,idx++});
+				correct_selector.process_event({c, idx++, 0});
 			else
 				++idx;
 		}
 
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 		selector.remove_event(to_delete);
 
 		REQUIRE(selector==correct_selector);
@@ -146,12 +146,12 @@ TEST_SUITE("suse::summary_selector")
 		suse::summary_selector<int_type> selector("A(B*C)*D",10000,100);
 
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 
 		for(std::size_t idx=0; auto c: input)
 		{
 			if(idx%2==1)
-				correct_selector.process_event({c,idx++});
+				correct_selector.process_event({c, idx++, 0});
 			else
 				++idx;
 		}
@@ -171,13 +171,13 @@ TEST_SUITE("suse::summary_selector")
 		suse::summary_selector<int_type> selector("A(B*C)*D",input.size(),100);
 
 		for(std::size_t idx=0; auto c: input)
-			selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
 		
 		for(std::size_t i=0;i<input.size();++i)
 			selector.remove_event(0);
 
-		correct_selector.process_event({'x',input.size()+10});
-		selector.process_event({'x',input.size()+10});
+		correct_selector.process_event({'x', input.size()+10, 0});
+		selector.process_event({'x', input.size()+10, 0});
 
 		REQUIRE(selector==correct_selector);
 	}
@@ -192,12 +192,12 @@ TEST_SUITE("suse::summary_selector")
 		
 		for(std::size_t idx=0; auto c: input)
 		{
-			selector.process_event({c,idx++});
-			correct_selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
+			correct_selector.process_event({c, idx++, 0});
 		}
 
-		selector.process_event({'a',input.size()*4});
-		correct_selector.process_event({'a',input.size()*4});
+		selector.process_event({'a', input.size()*4, 0});
+		correct_selector.process_event({'a', input.size()*4, 0});
 	
 		for(std::size_t i=0;i<input.size();++i)
 			correct_selector.remove_event(0);
@@ -215,15 +215,15 @@ TEST_SUITE("suse::summary_selector")
 		
 		for(std::size_t idx=0; auto c: input)
 		{
-			selector.process_event({c,idx++});
-			correct_selector.process_event({c,idx++});
+			selector.process_event({c, idx++, 0});
+			correct_selector.process_event({c, idx++, 0});
 		}
 
-		selector.process_event({'a',input.size()*2});
-		correct_selector.process_event({'a',input.size()*2});
+		selector.process_event({'a', input.size()*2, 0});
+		correct_selector.process_event({'a', input.size()*2, 0});
 
-		selector.process_event({'a',input.size()*4});
-		correct_selector.process_event({'a',input.size()*4});
+		selector.process_event({'a', input.size()*4, 0});
+		correct_selector.process_event({'a', input.size()*4, 0});
 	
 		for(std::size_t i=0;i<input.size();++i)
 			correct_selector.remove_event(0);

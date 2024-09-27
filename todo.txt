@@ -1,0 +1,7 @@
+Todo:
+
+- expand executionstate_counter_impl.hpp advance method
+- expand add_event method
+- Test green
+- Split sammary_selector_impl into implementations for sum and count
+- Implement mult. counter
