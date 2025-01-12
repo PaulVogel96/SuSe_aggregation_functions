@@ -8,37 +8,33 @@
 
 #include <cstddef>
 
-namespace suse
-{
-	struct edge
-	{
-		std::size_t from, to;
+namespace suse {
+struct edge {
+  std::size_t from, to;
 
-		friend constexpr auto operator<=>(const edge&, const edge&) = default;
-	};
+  friend constexpr auto operator<=>(const edge &, const edge &) = default;
+};
 
-	class edgelist
-	{
-		public:
-		friend edgelist compute_edges_per_character(const nfa& automaton);
+class edgelist {
+public:
+  friend edgelist compute_edges_per_character(const nfa &automaton);
 
-		std::span<const edge> edges_for(char symbol) const;
-		
-		private:
-		struct range
-		{
-			std::size_t start = 0, size = 0;
-			
-			friend constexpr auto operator<=>(const range&, const range&) = default;
-		};
-		std::array<range,256> character_to_range_;
-		
-		std::vector<edge> edges_;
+  std::span<const edge> edges_for(char symbol) const;
 
-		friend bool operator<=>(const edgelist&, const edgelist&) = default;
-	};
+private:
+  struct range {
+    std::size_t start = 0, size = 0;
 
-	edgelist compute_edges_per_character(const nfa& automaton);
-}
+    friend constexpr auto operator<=>(const range &, const range &) = default;
+  };
+  std::array<range, 256> character_to_range_;
+
+  std::vector<edge> edges_;
+
+  friend bool operator<=>(const edgelist &, const edgelist &) = default;
+};
+
+edgelist compute_edges_per_character(const nfa &automaton);
+} // namespace suse
 
 #endif

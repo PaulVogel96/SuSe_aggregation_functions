@@ -5,20 +5,17 @@
 
 #include <cstddef>
 
-namespace suse
-{
-	struct event
-	{
-		char type;
-		std::size_t timestamp;
+namespace suse {
+struct event {
+  char type;
+  std::size_t timestamp;
 
-		friend constexpr auto operator<=>(const event&, const event&) = default;
-	};
+  friend constexpr auto operator<=>(const event &, const event &) = default;
+};
 
-	inline std::istream& operator>>(std::istream& in, event& e)
-	{
-		return in>>e.type>>e.timestamp;
-	}
+inline std::istream &operator>>(std::istream &in, event &e) {
+  return in >> e.type >> e.timestamp;
 }
+} // namespace suse
 
 #endif
