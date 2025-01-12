@@ -11,10 +11,13 @@ namespace suse
 	template <typename underlying>
 	execution_state_counter<underlying>& execution_state_counter<underlying>::operator+=(const execution_state_counter<underlying>& other)
 	{
-		assert(size()==other.size());
+		assert(size() == other.size());
 
-		for(std::size_t i=0;i<counters_.size();++i)
-			counters_[i]+=other.counters_[i];
+		for (std::size_t i = 0; i < counters_.size(); ++i) {
+			//std::cout << "adding " << counters_[i] << " and " << other.counters_[i] << std::endl;
+			counters_[i] += other.counters_[i];
+			//std::cout << "counters[" << i << "] is now: " << counters_[i] << std::endl;
+		}
 
 		return *this;
 	}
@@ -22,10 +25,10 @@ namespace suse
 	template <typename underlying>
 	execution_state_counter<underlying>& execution_state_counter<underlying>::operator-=(const execution_state_counter<underlying>& other)
 	{
-		assert(size()==other.size());
+		assert(size() == other.size());
 
-		for(std::size_t i=0;i<counters_.size();++i)
-			counters_[i]-=other.counters_[i];
+		for(std::size_t i=0; i < counters_.size(); ++i)
+			counters_[i] -= other.counters_[i];
 
 		return *this;
 	}
@@ -33,8 +36,8 @@ namespace suse
 	template <typename underlying>
 	execution_state_counter<underlying>& execution_state_counter<underlying>::operator*=(const underlying &other)
 	{
-		for(std::size_t i=0;i<counters_.size();++i)
-			counters_[i]*=other;
+		for(std::size_t i=0; i < counters_.size(); ++i)
+			counters_[i] *= other;
 
 		return *this;
 	}
@@ -42,20 +45,20 @@ namespace suse
 	template <typename underlying>
 	execution_state_counter<underlying> advance(const execution_state_counter<underlying>& counter, const nfa& automaton, suse::event new_event)
 	{
-		assert(counter.size()==automaton.number_of_states());
+		assert(counter.size() == automaton.number_of_states());
 
 		auto followup = execution_state_counter<underlying>{counter.size()};
 
-		for(std::size_t source_id=0;source_id<automaton.number_of_states();++source_id)
+		for(std::size_t source_id=0; source_id<automaton.number_of_states(); ++source_id)
 		{
 			const auto add_for = [&](auto s)
 			{
 				const auto& state = automaton.states()[source_id];
-				if(auto it=state.transitions.find(s); it!=state.transitions.end())
+				if(auto it = state.transitions.find(s); it != state.transitions.end())
 				{
 					auto& destination_state_ids = it->second;
 					for(auto& destination_id: destination_state_ids)
-						followup[destination_id]+=counter[source_id];
+						followup[destination_id] += counter[source_id];
 				}
 			};
 

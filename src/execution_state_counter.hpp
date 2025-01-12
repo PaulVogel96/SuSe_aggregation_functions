@@ -36,7 +36,7 @@ namespace suse
 		execution_state_counter& operator-=(const execution_state_counter& other);
 		execution_state_counter& operator*=(const underlying_counter_type& factor);
 
-		friend execution_state_counter operator+(execution_state_counter lhs, const execution_state_counter& rhs)
+		friend execution_state_counter operator  +(execution_state_counter lhs, const execution_state_counter& rhs)
 		{
 			return lhs+=rhs;
 		}

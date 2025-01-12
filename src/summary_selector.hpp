@@ -119,7 +119,7 @@ namespace suse
 
 		auto create_window_info(std::size_t capacity) const;
 		void reset_counters(window_info& window) const;
-
+		void compare_windows_attributes(window_info& lhs, window_info& rhs) const;
 		std::size_t timestamp_at(std::size_t cache_idx) const;
 		bool in_shared_window(std::size_t timestamp0, std::size_t timestamp1) const;
 

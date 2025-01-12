@@ -5,3 +5,8 @@ Todo:
 - Test green
 - Split sammary_selector_impl into implementations for sum and count
 - Implement mult. counter
+
+
+Debugging Sum Summary Selector inequality:
+- Run just one test case
+- remove single parts of cache instructions?

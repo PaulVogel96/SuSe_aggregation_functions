@@ -7,6 +7,7 @@
 #include "regex.hpp"
 
 #include <cassert>
+#include "summary_selector.hpp"
 
 namespace suse
 {
@@ -77,26 +78,26 @@ counter_type summary_selector<counter_type>::sum_of_detected_partial_matches() c
 template <typename counter_type>
 counter_type summary_selector<counter_type>::sum_counter_values_of_complete_matches(const execution_state_counter<counter_type>& counter) const
 {
-	std::cout << "entering sum counter values of complete matches" << std::endl;
-	std::cout << "counter size is:";
-	std::cout << counter.size() << std::endl;
+	//std::cout << "entering sum counter values of complete matches" << std::endl;
+	//std::cout << "counter size is:";
+	//std::cout << counter.size() << std::endl;
 
 	assert(counter.size() == automaton.number_of_states());
 	
-	std::cout << "counter values are:" << std::endl;
+	//std::cout << "counter values are:" << std::endl;
 	counter_type sum{0};
 	for(std::size_t i = 0; i < counter.size(); ++i)
 	{
 		if (automaton_.states()[i].is_final) {
-			std::cout << "state is final" << std::endl;
-			std::cout << "counter value is: " << counter[i] << std::endl;
+			//std::cout << "state is final" << std::endl;
+			//std::cout << "counter value is: " << counter[i] << std::endl;
 			sum += counter[i];
 		}
-		std::cout << "state is not final" << std::endl;
+		//std::cout << "state is not final" << std::endl;
 	}
 
-	std::cout << "sum is: " << sum << std::endl;
-	std::cout << "-------------------------------------" << std::endl;
+	//std::cout << "sum is: " << sum << std::endl;
+	//std::cout << "-------------------------------------" << std::endl;
 	return sum;
 }
 
@@ -106,10 +107,10 @@ counter_type summary_selector<counter_type>::sum_counter_values_of_partial_match
 	assert(counter.size() == automaton.number_of_states());
 	
 	counter_type sum{0};
-	for(std::size_t i=0;i<counter.size();++i)
+	for(std::size_t i=0; i < counter.size(); ++i)
 	{
 		if(!automaton_.states()[i].is_final)
-			sum+=counter[i];
+			sum += counter[i];
 	}
 
 	return sum;
@@ -126,13 +127,14 @@ void summary_selector<counter_type>::process_event(const event& new_event, const
 	const auto select_idx_to_evict = [&]() -> std::optional<std::size_t>
 	{
 		if constexpr(callable_eviction_strategy<strategy_type,summary_selector>)
-			return strategy(*this,new_event);
+			return strategy(*this, new_event);
 		else
 			return strategy.select(*this,new_event);
 	};
 
 	if(cache_.size()==cache_.capacity())
 	{
+		//std::cout << "cache at max capacity" << std::endl;
 		if(auto to_remove = select_idx_to_evict(); to_remove)
 			remove_event(*to_remove);
 	}
@@ -150,32 +152,48 @@ void summary_selector<counter_type>::process_event(const event& new_event)
 template <typename counter_type>
 void summary_selector<counter_type>::remove_event(std::size_t cache_index)
 {
-	assert(cache_index<cache_.size());
+	//std::cout << "Removing event at cache index " << cache_index << std::endl;
+	assert(cache_index < cache_.size());
 	
+	//std::cout << "Decreasing number counter by the value of state_counter" << std::endl;
+	//std::cout << "total number counter size before substraction: " << total_number_counter_.size() << std::endl;
 	total_number_counter_ -= cache_[cache_index].state_counter;
-	const auto removed_timestamp = timestamp_at(cache_index);
-	if(cache_index<active_window_.start_idx)
-		--active_window_.start_idx;
+	//std::cout << "total number counter size after substraction: " << total_number_counter_.size() << std::endl;
+	
+	//std::cout << "Decreasing sum counter by the value of state_counter" << std::endl;
+	//std::cout << "total sum counter size before substraction: " << total_sum_counter_.size() << std::endl;
+	total_sum_counter_ -= cache_[cache_index].state_counter;
+	//std::cout << "total sum counter size after substraction: " << total_sum_counter_.size() << std::endl;
 
-	cache_.erase(cache_.begin()+cache_index);
+	const auto removed_timestamp = timestamp_at(cache_index);
+
+	if (cache_index < active_window_.start_idx) {
+		//std::cout << "resetting start index" << std::endl;
+		--active_window_.start_idx;
+	}
+
+	cache_.erase(cache_.begin() + cache_index);
 
 	if(cache_.empty())
 	{
+		//std::cout << "cache empty, resetting counters" << std::endl;
 		active_window_.start_idx = 0;
 		reset_counters(active_window_);
 		return;
 	}
 
 	replay_affected_range(cache_index, removed_timestamp);
-	if(in_shared_window(current_time_,removed_timestamp))
-		replay_time_window(active_window_,std::span{cache_.begin()+active_window_.start_idx,cache_.end()});
+	if (in_shared_window(current_time_, removed_timestamp)) {
+		//std::cout << "replaying time window" << std::endl;
+		replay_time_window(active_window_, std::span{ cache_.begin() + active_window_.start_idx, cache_.end() });
+	}
 }
 
 template <typename counter_type>
 void summary_selector<counter_type>::replay_affected_range(std::size_t removed_idx, std::size_t removed_timestamp)
 {
-	auto replay_start_idx = removed_idx<time_window_size()?0:removed_idx-time_window_size();
-	while(replay_start_idx<cache_.size() && !in_shared_window(removed_timestamp,timestamp_at(replay_start_idx)))
+	auto replay_start_idx = removed_idx<time_window_size() ? 0 : removed_idx - time_window_size();
+	while(replay_start_idx<cache_.size() && !in_shared_window(removed_timestamp, timestamp_at(replay_start_idx)))
 		++replay_start_idx;
 
 	const auto replay_start_timestamp = timestamp_at(replay_start_idx);
@@ -187,7 +205,7 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 	auto replay_window = create_window_info(time_window_size());
 	replay_window.start_idx = time_window_replay_start_idx;
 	const auto relevant_prefix = std::span{cache_.begin()+replay_window.start_idx,cache_.begin()+replay_start_idx};
-	replay_time_window(replay_window,relevant_prefix);
+	replay_time_window(replay_window, relevant_prefix);
 
 	const auto is_relevant = [&](std::size_t idx)
 	{
@@ -199,68 +217,91 @@ void summary_selector<counter_type>::replay_affected_range(std::size_t removed_i
 	
 	for(std::size_t idx = replay_start_idx; idx<cache_.size() && is_relevant(idx); ++idx)
 	{
-		update_window(replay_window,timestamp_at(idx));
+		update_window(replay_window, timestamp_at(idx));
 		
-		auto global_counter_change = advance(replay_window.total_number_counter, per_character_edges_, cache_[idx].cached_event);
-		replay_window.total_number_counter += global_counter_change;
+		auto global_counter_change_number = advance(replay_window.total_number_counter, per_character_edges_, cache_[idx].cached_event);
+		auto global_counter_change_sum = advance(replay_window.total_sum_counter, per_character_edges_, cache_[idx].cached_event);
+		replay_window.total_number_counter += global_counter_change_number;
+		replay_window.total_sum_counter += global_counter_change_sum;
 
 		const auto active_window_size = idx - replay_window.start_idx;
 		for(std::size_t i=0; i<active_window_size;++i)
 		{
 			const auto cache_idx = replay_window.start_idx + i;
 			
-			const auto local_change = advance(replay_window.per_event_number_counters[i], per_character_edges_, cache_[idx].cached_event);
+			const auto local_change_number = advance(replay_window.per_event_number_counters[i], per_character_edges_, cache_[idx].cached_event);
+			const auto local_change_sum = advance(replay_window.per_event_sum_counters[i], per_character_edges_, cache_[idx].cached_event);
 			if(cache_idx>=replay_start_idx && in_shared_window(removed_timestamp, timestamp_at(cache_idx)))
-				cache_[cache_idx].state_counter += local_change;
-			replay_window.per_event_number_counters[i] += local_change;
+				cache_[cache_idx].state_counter += local_change_number; //cache entry to add?
+			replay_window.per_event_number_counters[i] += local_change_number;
+			replay_window.per_event_sum_counters[i] += local_change_sum;
 		}
 		
-		replay_window.per_event_number_counters.push_back(global_counter_change);
-		if(in_shared_window(removed_timestamp,timestamp_at(idx)))
-			cache_[idx].state_counter = std::move(global_counter_change);
+		replay_window.per_event_number_counters.push_back(global_counter_change_number);
+		replay_window.per_event_sum_counters.push_back(global_counter_change_sum);
+
+		if (in_shared_window(removed_timestamp, timestamp_at(idx)))
+		{
+			cache_[idx].state_counter = std::move(global_counter_change_number); //add cache entry for counter?
+		}
 	}
 }
 
 template <typename counter_type>
 void summary_selector<counter_type>::add_event(const event& new_event)
 {
-	auto global_counter_change = advance(active_window_.total_number_counter, per_character_edges_, new_event);
-	active_window_.total_number_counter += global_counter_change;
-	total_number_counter_ += global_counter_change;
-	total_detected_number_counter_+=global_counter_change;
+	auto global_counter_change_number = advance(active_window_.total_number_counter, per_character_edges_, new_event);
+	auto global_counter_change_sum = advance(active_window_.total_sum_counter, per_character_edges_, new_event);
+
+	active_window_.total_number_counter += global_counter_change_number;
+	active_window_.total_sum_counter += global_counter_change_sum;
+
+	total_number_counter_ += global_counter_change_number;
+	total_sum_counter_ += global_counter_change_sum;
+
+	total_detected_number_counter_+= global_counter_change_number;
+	total_detected_sum_counter_ += global_counter_change_sum;
 
 	const auto active_window_size = cache_.size() - active_window_.start_idx;
-	for(std::size_t i=0; i<active_window_size;++i)
+	for(std::size_t i = 0; i < active_window_size; ++i)
 	{
 		const auto cache_idx = active_window_.start_idx + i;
 		
-		const auto local_change = advance(active_window_.per_event_number_counters[i], per_character_edges_, new_event);
-		cache_[cache_idx].state_counter += local_change;
-		active_window_.per_event_number_counters[i] += local_change;
+		const auto local_change_number = advance(active_window_.per_event_number_counters[i], per_character_edges_, new_event);
+		const auto local_change_sum = advance(active_window_.per_event_sum_counters[i], per_character_edges_, new_event);
+
+		cache_[cache_idx].state_counter += local_change_number; //add counter to cache?
+
+		active_window_.per_event_number_counters[i] += local_change_number;
+		active_window_.per_event_sum_counters[i] += local_change_sum;
 	}
 	
-	active_window_.per_event_number_counters.push_back(global_counter_change);
-	cache_.emplace_back(new_event, std::move(global_counter_change));
+	active_window_.per_event_number_counters.push_back(global_counter_change_number);
+	active_window_.per_event_sum_counters.push_back(global_counter_change_sum);
+
+	cache_.emplace_back(new_event, std::move(global_counter_change_number)); //add counter to cache?
 }
 
 template <typename counter_type>
 void summary_selector<counter_type>::purge_expired()
 {
 	std::size_t purge_until = 0;
-	while(purge_until<cache_.size() && current_time()-cache_[purge_until].cached_event.timestamp>time_to_live_)
+	while(purge_until<cache_.size() && current_time() - cache_[purge_until].cached_event.timestamp > time_to_live_)
 	{
-		total_number_counter_-=cache_[purge_until].state_counter;
+		//std::cout << "purging expired events" << std::endl;
+		total_number_counter_ -= cache_[purge_until].state_counter;
+		total_sum_counter_ -= cache_[purge_until].state_counter;
 		const auto removed_timestamp = timestamp_at(purge_until);
 		cache_[purge_until].cached_event.timestamp = std::numeric_limits<std::size_t>::max(); //dirty hack to make the replay ignore this event
 		std::fill(cache_[purge_until].state_counter.begin(),cache_[purge_until].state_counter.end(),0);
-		replay_affected_range(purge_until+1, removed_timestamp);
+		replay_affected_range(purge_until + 1, removed_timestamp);
 		++purge_until;
 	}
 
 	if(purge_until==0)
 		return;
 	
-	cache_.erase(cache_.begin(),cache_.begin()+purge_until);
+	cache_.erase(cache_.begin(), cache_.begin() + purge_until);
 
 	if(cache_.empty())
 	{
@@ -270,11 +311,11 @@ void summary_selector<counter_type>::purge_expired()
 	}
 
 	if(purge_until<active_window_.start_idx)
-		active_window_.start_idx-=purge_until;
+		active_window_.start_idx -= purge_until;
 	else
 	{
-		active_window_.start_idx = cache_.size()>time_window_size()?cache_.size()-time_window_size():0;
-		replay_time_window(active_window_,std::span{cache_.begin()+active_window_.start_idx,cache_.end()});
+		active_window_.start_idx = cache_.size() > time_window_size()?cache_.size()-time_window_size():0;
+		replay_time_window(active_window_, std::span{cache_.begin() + active_window_.start_idx, cache_.end()});
 	}
 }
 
@@ -288,7 +329,9 @@ void summary_selector<counter_type>::update_window(window_info& window, std::siz
 	{
 		const auto type = cache_[window.start_idx++].cached_event.type;
 		removed_initiator |= initial_state.transitions.contains(type) || initial_state.transitions.contains(nfa::wildcard_symbol);
+		//std::cout << "popping front" << std::endl;
 		window.per_event_number_counters.pop_front();
+		window.per_event_sum_counters.pop_front();
 	}
 
 	if(removed_initiator)
@@ -306,17 +349,25 @@ void summary_selector<counter_type>::replay_time_window(window_info& window, std
 {
 	reset_counters(window);
 
-	for(std::size_t i=0;i<events.size();++i)
+	for(std::size_t i = 0; i < events.size(); ++i)
 	{
 		const auto to_readd = events[i].cached_event;
-		auto global_counter_change = advance(window.total_number_counter, per_character_edges_, to_readd);
-		window.total_number_counter += global_counter_change;
-		for(std::size_t j=0;j<i;++j)
+		auto global_counter_change_number = advance(window.total_number_counter, per_character_edges_, to_readd);
+		auto global_counter_change_sum = advance(window.total_sum_counter, per_character_edges_, to_readd);
+		window.total_number_counter += global_counter_change_number;
+		window.total_sum_counter += global_counter_change_sum;
+
+		for(std::size_t j=0; j < i; ++j)
 		{
-			const auto local_change = advance(window.per_event_number_counters[j], per_character_edges_, to_readd);
-			window.per_event_number_counters[j] += local_change;
+			const auto local_change_number = advance(window.per_event_number_counters[j], per_character_edges_, to_readd);
+			const auto local_change_sum = advance(window.per_event_sum_counters[j], per_character_edges_, to_readd);
+
+			window.per_event_number_counters[j] += local_change_number;
+			window.per_event_sum_counters[j] += local_change_sum;
 		}
-		window.per_event_number_counters.push_back(std::move(global_counter_change));
+
+		window.per_event_number_counters.push_back(std::move(global_counter_change_number));
+		window.per_event_sum_counters.push_back(std::move(global_counter_change_sum));
 	}
 }
 
@@ -339,6 +390,7 @@ auto summary_selector<counter_type>::create_window_info(std::size_t window_size)
 template <typename counter_type>
 void summary_selector<counter_type>::reset_counters(window_info& window) const
 {
+	//std::cout << "Resetting counters!" << std::endl;
 	window.total_number_counter*=0; // performance!
 	window.total_sum_counter *= 0; // performance!
 	window.total_number_counter[automaton_.initial_state_id()] = 1;
@@ -350,7 +402,7 @@ void summary_selector<counter_type>::reset_counters(window_info& window) const
 template <typename counter_type>
 std::size_t summary_selector<counter_type>::timestamp_at(std::size_t cache_idx) const
 {
-	assert(cache_idx<cache_.size());
+	assert(cache_idx < cache_.size());
 	
 	return cache_[cache_idx].cached_event.timestamp;
 }
@@ -369,13 +421,21 @@ bool summary_selector<counter_type>::in_shared_window(std::size_t timestamp0, st
 template <typename counter_type>
 bool operator==(const summary_selector<counter_type>& lhs, const summary_selector<counter_type>& rhs)
 {
-	if (lhs.per_character_edges_ != rhs.per_character_edges_) return false;
-	if (lhs.cache_ != rhs.cache_) return false;
-	if (lhs.total_number_counter_ != rhs.total_number_counter_) return false;
-	if (lhs.total_sum_counter_ != rhs.total_sum_counter_) return false;
-	if (lhs.current_time_ != rhs.current_time_) return false;
-
+	if (lhs.per_character_edges_ != rhs.per_character_edges_) {
+		return false;
+	}
+	if (lhs.cache_ != rhs.cache_) {
+		return false;
+	}
+	if (lhs.total_number_counter_ != rhs.total_number_counter_) {
+		return false;
+	}
+	if (lhs.total_sum_counter_ != rhs.total_sum_counter_) {
+		return false;
+	}
+	if (lhs.current_time_ != rhs.current_time_) {
+		return false;
+	}
 	return lhs.active_window_ == rhs.active_window_;
 }
-
 }

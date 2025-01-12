@@ -85,28 +85,43 @@ TEST_SUITE("suse::summary_selector")
 		}
 	}
 
+	/* This Test tests the behavior of the selectors.remove_event()
+	* method. Supposedly, all the selectors should be equal, regardless 
+	* of if an event was removed or if it was skipped during the process.
+	* There is still an error, as once the remove_event() method is called,
+	* The total sum counters are not equal anymore. This means there must 
+	* be a flaw in the removal logic. h
+	*/
 	TEST_CASE("remove madness")
 	{
 		using int_type = boost::multiprecision::uint128_t;
 		const std::string_view input = "BBBABBCBCBBACABABCCCBBACBABBACABBBCDCBCCBAABBABACBADBDCBCBAABBACDABAACBACBADCBCDBBDBBACBABAACBDCABBBABBBACCBCBBCDAACCBBBBAABADACBABCAACAABBBACBBDACBBBCBACACBACBCBBDAABBBABBCDCACABACBABBBBBCCBBACACBBAAACCBBAAABBAAABCACCABCABABABCACBBABBCBABCBCCBCCCAACBAABCCDBDCCBAABCCABBCBBBBBCCBCBABCBBCABCCBABAAABABBBBBACBBBBBCABBCBBACCCAABBABCDCBADBAABAABBBBCDBBACCBCBBCBABCDBBBBBCCAAACCBBCBCBCCAABADBABAACBBDDACBBABCABABABADACCBBBBABBBBBBCBBCBACABDABACACDCBBABBCBDBBBBBBBBDCABAACBCBBBCABCBBACCCBBCCBCBABAAABADBBCBABABBCCBABBBABCACCBBACBBDBBCABCCADBCCBBCBBACCBCABAAACCABAACBBBBDCBDBCACBBBBAACCABBBBAABABCCBBCABABACBBDBACABBBBABCDABCAAAAACCBBBBCBABBDCABBDBCBBCBAAAABBBCBBBBBCBBBACCBBCCBBCDABCABDCABBBCCBCAADCBADAADBBBACBCCABBBCCCAACCBBBBCBBBBACBABABBABBCCAACCAAACBCCAACCBBBCDBDCBCACBBACBCBBCBBACAAABBBBDCBABBBCBDCACCBDBAAACBBACABABBBACCACCBBCBACDCCCBCDCBCDACBCBBCDBCBCACABBABCAABABDABBBBBBBCCCAAACBBACBCBCCABCAAABCBCBACABBBBCBDDBBBAACCBDBCCBABBBBBBBCABBACBABBCCCBAABBCDCBBBBCBCBACCCBBACCBBBCCBBBBCABCDBCACBCBCCCBDAA";
 		const std::size_t to_delete = 498;
 
-		suse::summary_selector<int_type> correct_selector("A(B*C)*D",1000,500);
-		suse::summary_selector<int_type> selector("A(B*C)*D",1000,500);
+		suse::summary_selector<int_type> correct_selector("A(B*C)*D", 1000, 500);
+		suse::summary_selector<int_type> selector("A(B*C)*D", 1000, 500);
 		
-		for(std::size_t idx=0; auto c: input)
+		//std::cout << "Processing events for skipping selector" << std::endl;
+		for(std::size_t idx = 0; auto c: input)
 		{
-			if(idx!=to_delete)
-				correct_selector.process_event({c, idx++, 0});
-			else
+			if (idx != to_delete) {
+				//std::cout << "processing event " << c << "0" << std::endl;
+				correct_selector.process_event({ c, idx++, 0 });
+			}
+			else {
+				//std::cout << "skipping event " << c << " at index " << idx << std::endl;
 				++idx;
+			}
 		}
 
-		for(std::size_t idx=0; auto c: input)
+		//std::cout << "Processing events for removal selector" << std::endl;
+		for (std::size_t idx = 0; auto c: input) {
 			selector.process_event({c, idx++, 0});
+		}
+
 		selector.remove_event(to_delete);
 
-		REQUIRE(selector==correct_selector);
+		REQUIRE(selector == correct_selector);
 	}
 	
 	TEST_CASE("all hope abandon ye who enter here")
