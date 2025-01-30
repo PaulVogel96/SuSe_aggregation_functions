@@ -1,5 +1,5 @@
-#ifndef SUSE_SUMMARY_SELECTOR_HPP
-#define SUSE_SUMMARY_SELECTOR_HPP
+#ifndef SUSE_SUMMARY_SELECTOR_COUNT_HPP
+#define SUSE_SUMMARY_SELECTOR_COUNT_HPP
 
 #include "edgelist.hpp"
 #include "event.hpp"
@@ -34,11 +34,11 @@ template <typename T, typename cache_type>
 concept eviction_strategy = callable_eviction_strategy<T, cache_type> || eviction_strategy_object<T, cache_type>;
 
 template <typename counter_type>
-class summary_selector {
+class summary_selector_count {
 public:
-  summary_selector(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max());
+  summary_selector_count(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max());
 
-  template <eviction_strategy<summary_selector> strategy_type>
+  template <eviction_strategy<summary_selector_count> strategy_type>
   void process_event(const event &new_event, const strategy_type &strategy);
   void process_event(const event &new_event);
 
@@ -106,10 +106,10 @@ private:
   bool in_shared_window(std::size_t timestamp0, std::size_t timestamp1) const;
 
   template <typename T>
-  friend bool operator==(const summary_selector<T> &lhs, const summary_selector<T> &rhs);
+  friend bool operator==(const summary_selector_count<T> &lhs, const summary_selector_count<T> &rhs);
 };
 } // namespace suse
 
-#include "summary_selector_impl.hpp"
+#include "summary_selector_count_impl.hpp"
 
 #endif

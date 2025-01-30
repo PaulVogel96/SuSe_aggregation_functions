@@ -1,4 +1,4 @@
-#include "summary_selector.hpp"
+#include "summary_selector_count.hpp"
 #include "eviction_strategies.hpp"
 #include "nfa.hpp"
 #include "regex.hpp"
@@ -92,7 +92,7 @@ struct run_result {
 };
 
 template <typename strategy_type>
-auto run(suse::summary_selector<counter_type> &selector, strategy_type &strategy, const std::unordered_set<std::size_t> evaluation_timestamps) {
+auto run(suse::summary_selector_count<counter_type> &selector, strategy_type &strategy, const std::unordered_set<std::size_t> evaluation_timestamps) {
   run_result result{};
 
   for (suse::event next_event; std::cin >> next_event; ++result.processed_events) {
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) try {
 
   const auto start_time = std::chrono::steady_clock::now();
 
-  suse::summary_selector<counter_type> selector{query, summary_size, time_window_size, time_to_live};
+  suse::summary_selector_count<counter_type> selector{query, summary_size, time_window_size, time_to_live};
 
   const auto measured_run = [&](auto &strategy) {
     const auto processing_start_time = std::chrono::steady_clock::now();

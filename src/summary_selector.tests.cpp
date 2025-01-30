@@ -1,12 +1,12 @@
-#include "summary_selector.hpp"
+#include "summary_selector_count.hpp"
 
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include <doctest/doctest.h>
 
-TEST_SUITE("suse::summary_selector") {
+TEST_SUITE("suse::summary_selector_count") {
   TEST_CASE("simple, irrelevant time window") {
-    suse::summary_selector<int> selector("a(b|c)d?e", 10, 10);
+    suse::summary_selector_count<int> selector("a(b|c)d?e", 10, 10);
 
     for (std::size_t idx = 0; auto c : "abcde")
       selector.process_event({c, idx++});
@@ -15,7 +15,7 @@ TEST_SUITE("suse::summary_selector") {
   }
 
   TEST_CASE("slightly less simple, irrelevant time window") {
-    suse::summary_selector<int> selector("a(b|c)+d?e", 10, 10);
+    suse::summary_selector_count<int> selector("a(b|c)+d?e", 10, 10);
 
     for (std::size_t idx = 0; auto c : "aabcde")
       selector.process_event({c, idx++});
@@ -26,7 +26,7 @@ TEST_SUITE("suse::summary_selector") {
   TEST_CASE("larger test, irrelevant time window") {
     const std::string_view input = "aabbcbcbcacbccbabcdeacbdeabdadedbcbcdacdeacbdacaaacbcabcdbcacbcdacbadcbacdbcacbdabdacbdacbcbcecbacbbcbbcbbcacbdcabcaaaaabddccbacbcasdfcbbedacccadcbcbcdabdbacdabdacbcbcbcbabcecbadcbecbacbdcbacbcbabdabjaljadcadcaddcdaaaaabceaaabaeeasdwbdceaidaadcdeaaaacdesdcasdefaserdabcedsiabfaasefbdedaaddccdeafceabdebdeadaaabeadabdasdfbcadcdfabeaderasdfcbede";
 
-    suse::summary_selector<boost::multiprecision::cpp_int> selector("a(b|c)+d?e", input.size(), input.size());
+    suse::summary_selector_count<boost::multiprecision::cpp_int> selector("a(b|c)+d?e", input.size(), input.size());
     for (std::size_t idx = 0; auto c : input)
       selector.process_event({c, idx++});
 
@@ -38,7 +38,7 @@ TEST_SUITE("suse::summary_selector") {
     using int_type = boost::multiprecision::uint128_t;
     const std::string_view input = "aabbcbcbcacbccbabcdeacbdeabdadedbcbcdacdeacbdacaaacbcabcdbcacbcdacbadcbacdbcacbdabdacbdacbcbcecbacbbcbbcbbcacbdcabcaaaaabddccbacbcadcbbedacccadcbcbcdabdbacdabdacbcbcbcbabcecbadcbecbacbdcbacbcbabdabaadcadcaddcdaaaaabceaaabaeeadbdceadaadcdeaaaacdedcadeaedabcedabaaebdedaaddccdeaceabdebdeadaaabeadabdadbcadcdabeadeadcbedeaabbcbcbcacbccbabcdeacbdeabdadedbcbcdacdeacbdacaaacbcabcdbcacbcdacbadcbacdbcacbdabdacbdacbcbcecbacbbcbbcbbcacbdcabcaaaaabddccbacbcadcbbedacccadcbcbcdabdbacdabdacbcbcbcbabcecbadcbecbacbdcbacbcbabdabaadcadcaddcdaaaaabceaaabaeeadbdceadaadcdeaaaacdedcadeaedabcedabaaebdedaaddccdeaceabdebdeadaaabeadabdadbcadcdabeadeadcbede";
 
-    suse::summary_selector<int_type> selector("a*b(c|d)*e", input.size(), 253);
+    suse::summary_selector_count<int_type> selector("a*b(c|d)*e", input.size(), 253);
     for (std::size_t idx = 0; auto c : input)
       selector.process_event({c, idx++});
 
@@ -52,8 +52,8 @@ TEST_SUITE("suse::summary_selector") {
     for (std::size_t to_delete = 0; to_delete < input.size(); ++to_delete) {
       CAPTURE(to_delete);
 
-      suse::summary_selector<int_type> correct_selector("a*b(c|d)+e", input.size(), 42);
-      suse::summary_selector<int_type> selector("a*b(c|d)+e", input.size(), 42);
+      suse::summary_selector_count<int_type> correct_selector("a*b(c|d)+e", input.size(), 42);
+      suse::summary_selector_count<int_type> selector("a*b(c|d)+e", input.size(), 42);
 
       for (std::size_t idx = 0; auto c : input) {
         if (idx != to_delete)
@@ -82,8 +82,8 @@ TEST_SUITE("suse::summary_selector") {
     const std::string_view input = "BBBABBCBCBBACABABCCCBBACBABBACABBBCDCBCCBAABBABACBADBDCBCBAABBACDABAACBACBADCBCDBBDBBACBABAACBDCABBBABBBACCBCBBCDAACCBBBBAABADACBABCAACAABBBACBBDACBBBCBACACBACBCBBDAABBBABBCDCACABACBABBBBBCCBBACACBBAAACCBBAAABBAAABCACCABCABABABCACBBABBCBABCBCCBCCCAACBAABCCDBDCCBAABCCABBCBBBBBCCBCBABCBBCABCCBABAAABABBBBBACBBBBBCABBCBBACCCAABBABCDCBADBAABAABBBBCDBBACCBCBBCBABCDBBBBBCCAAACCBBCBCBCCAABADBABAACBBDDACBBABCABABABADACCBBBBABBBBBBCBBCBACABDABACACDCBBABBCBDBBBBBBBBDCABAACBCBBBCABCBBACCCBBCCBCBABAAABADBBCBABABBCCBABBBABCACCBBACBBDBBCABCCADBCCBBCBBACCBCABAAACCABAACBBBBDCBDBCACBBBBAACCABBBBAABABCCBBCABABACBBDBACABBBBABCDABCAAAAACCBBBBCBABBDCABBDBCBBCBAAAABBBCBBBBBCBBBACCBBCCBBCDABCABDCABBBCCBCAADCBADAADBBBACBCCABBBCCCAACCBBBBCBBBBACBABABBABBCCAACCAAACBCCAACCBBBCDBDCBCACBBACBCBBCBBACAAABBBBDCBABBBCBDCACCBDBAAACBBACABABBBACCACCBBCBACDCCCBCDCBCDACBCBBCDBCBCACABBABCAABABDABBBBBBBCCCAAACBBACBCBCCABCAAABCBCBACABBBBCBDDBBBAACCBDBCCBABBBBBBBCABBACBABBCCCBAABBCDCBBBBCBCBACCCBBACCBBBCCBBBBCABCDBCACBCBCCCBDAA";
     const std::size_t to_delete = 498;
 
-    suse::summary_selector<int_type> correct_selector("A(B*C)*D", 1000, 500);
-    suse::summary_selector<int_type> selector("A(B*C)*D", 1000, 500);
+    suse::summary_selector_count<int_type> correct_selector("A(B*C)*D", 1000, 500);
+    suse::summary_selector_count<int_type> selector("A(B*C)*D", 1000, 500);
 
     for (std::size_t idx = 0; auto c : input) {
       if (idx != to_delete)
@@ -108,8 +108,8 @@ TEST_SUITE("suse::summary_selector") {
 
     const std::size_t to_delete = 4998;
 
-    suse::summary_selector<int_type> correct_selector("A(B*C)*D", 10000, 100);
-    suse::summary_selector<int_type> selector("A(B*C)*D", 10000, 100);
+    suse::summary_selector_count<int_type> correct_selector("A(B*C)*D", 10000, 100);
+    suse::summary_selector_count<int_type> selector("A(B*C)*D", 10000, 100);
 
     for (std::size_t idx = 0; auto c : input) {
       if (idx != to_delete)
@@ -129,8 +129,8 @@ TEST_SUITE("suse::summary_selector") {
     using int_type = boost::multiprecision::uint128_t;
     const std::string_view input = "BBBABBCBCBBACABABCCCBBACBABBACABBBCDCBCCBAABBABACBADBDCBCBAABBACDABAACBACBADCBCDBBDBBACBABAACBDCABBBABBBACCBCBBCDAACCBBBBAABADACBABCAACAABBBACBBDACBBBCBACACBACBCBBDAABBBABBCDCACABACBABBBBBCCBBACACBBAAACCBBAAABBAAABCACCABCABABABCACBBABBCBABCBCCBCCCAACBAABCCDBDCCBAABCCABBCBBBBBCCBCBABCBBCABCCBABAAABABBBBBACBBBBBCABBCBBACCCAABBABCDCBADBAABAABBBBCDBBACCBCBBCBABCDBBBBBCCAAACCBBCBCBCCAABADBABAACBBDDACBBABCABABABADACCBBBBABBBBBBCBBCBACABDABACACDCBBABBCBDBBBBBBBBDCABAACBCBBBCABCBBACCCBBCCBCBABAAABADBBCBABABBCCBABBBABCACCBBACBBDBBCABCCADBCCBBCBBACCBCABAAACCABAACBBBBDCBDBCACBBBBAACCABBBBAABABCCBBCABABACBBDBACABBBBABCDABCAAAAACCBBBBCBABBDCABBDBCBBCBAAAABBBCBBBBBCBBBACCBBCCBBCDABCABDCABBBCCBCAADCBADAADBBBACBCCABBBCCCAACCBBBBCBBBBACBABABBABBCCAACCAAACBCCAACCBBBCDBDCBCACBBACBCBBCBBACAAABBBBDCBABBBCBDCACCBDBAAACBBACABABBBACCACCBBCBACDCCCBCDCBCDACBCBBCDBCBCACABBABCAABABDABBBBBBBCCCAAACBBACBCBCCABCAAABCBCBACABBBBCBDDBBBAACCBDBCCBABBBBBBBCABBACBABBCCCBAABBCDCBBBBCBCBACCCBBACCBBBCCBBBBCABCDBCACBCBCCCBDAA";
 
-    suse::summary_selector<int_type> correct_selector("A(B*C)*D", 10000, 100);
-    suse::summary_selector<int_type> selector("A(B*C)*D", 10000, 100);
+    suse::summary_selector_count<int_type> correct_selector("A(B*C)*D", 10000, 100);
+    suse::summary_selector_count<int_type> selector("A(B*C)*D", 10000, 100);
 
     for (std::size_t idx = 0; auto c : input)
       selector.process_event({c, idx++});
@@ -152,8 +152,8 @@ TEST_SUITE("suse::summary_selector") {
     using int_type = boost::multiprecision::uint128_t;
     const std::string_view input = "BBBABBCBCBBACABABCCCBBACBABBACABBBCDCBCCBAABBABACBADBDCBCBAABBACDABAACBACBADCBCDBBDBBACBABAACBDCABBBABBBACCBCBBCDAACCBBBBAABADACBABCAACAABBBACBBDACBBBCBACACBACBCBBDAABBBABBCDCACABACBABBBBBCCBBACACBBAAACCBBAAABBAAABCACCABCABABABCACBBABBCBABCBCCBCCCAACBAABCCDBDCCBAABCCABBCBBBBBCCBCBABCBBCABCCBABAAABABBBBBACBBBBBCABBCBBACCCAABBABCDCBADBAABAABBBBCDBBACCBCBBCBABCDBBBBBCCAAACCBBCBCBCCAABADBABAACBBDDACBBABCABABABADACCBBBBABBBBBBCBBCBACABDABACACDCBBABBCBDBBBBBBBBDCABAACBCBBBCABCBBACCCBBCCBCBABAAABADBBCBABABBCCBABBBABCACCBBACBBDBBCABCCADBCCBBCBBACCBCABAAACCABAACBBBBDCBDBCACBBBBAACCABBBBAABABCCBBCABABACBBDBACABBBBABCDABCAAAAACCBBBBCBABBDCABBDBCBBCBAAAABBBCBBBBBCBBBACCBBCCBBCDABCABDCABBBCCBCAADCBADAADBBBACBCCABBBCCCAACCBBBBCBBBBACBABABBABBCCAACCAAACBCCAACCBBBCDBDCBCACBBACBCBBCBBACAAABBBBDCBABBBCBDCACCBDBAAACBBACABABBBACCACCBBCBACDCCCBCDCBCDACBCBBCDBCBCACABBABCAABABDABBBBBBBCCCAAACBBACBCBCCABCAAABCBCBACABBBBCBDDBBBAACCBDBCCBABBBBBBBCABBACBABBCCCBAABBCDCBBBBCBCBACCCBBACCBBBCCBBBBCABCDBCACBCBCCCBDAA";
 
-    suse::summary_selector<int_type> correct_selector("A(B*C)*D", input.size(), 100);
-    suse::summary_selector<int_type> selector("A(B*C)*D", input.size(), 100);
+    suse::summary_selector_count<int_type> correct_selector("A(B*C)*D", input.size(), 100);
+    suse::summary_selector_count<int_type> selector("A(B*C)*D", input.size(), 100);
 
     for (std::size_t idx = 0; auto c : input)
       selector.process_event({c, idx++});
@@ -171,8 +171,8 @@ TEST_SUITE("suse::summary_selector") {
     using int_type = boost::multiprecision::uint128_t;
     const std::string_view input = "BBBABBCBCBBACABABCCCBBACBABBACABBBCDCBCCBAABBABACBADBDCBCBAABBACDABAACBACBADCBCDBBDBBACBABAACBDCABBBABBBACCBCBBCDAACCBBBBAABADACBABCAACAABBBACBBDACBBBCBACACBACBCBBDAABBBABBCDCACABACBABBBBBCCBBACACBBAAACCBBAAABBAAABCACCABCABABABCACBBABBCBABCBCCBCCCAACBAABCCDBDCCBAABCCABBCBBBBBCCBCBABCBBCABCCBABAAABABBBBBACBBBBBCABBCBBACCCAABBABCDCBADBAABAABBBBCDBBACCBCBBCBABCDBBBBBCCAAACCBBCBCBCCAABADBABAACBBDDACBBABCABABABADACCBBBBABBBBBBCBBCBACABDABACACDCBBABBCBDBBBBBBBBDCABAACBCBBBCABCBBACCCBBCCBCBABAAABADBBCBABABBCCBABBBABCACCBBACBBDBBCABCCADBCCBBCBBACCBCABAAACCABAACBBBBDCBDBCACBBBBAACCABBBBAABABCCBBCABABACBBDBACABBBBABCDABCAAAAACCBBBBCBABBDCABBDBCBBCBAAAABBBCBBBBBCBBBACCBBCCBBCDABCABDCABBBCCBCAADCBADAADBBBACBCCABBBCCCAACCBBBBCBBBBACBABABBABBCCAACCAAACBCCAACCBBBCDBDCBCACBBACBCBBCBBACAAABBBBDCBABBBCBDCACCBDBAAACBBACABABBBACCACCBBCBACDCCCBCDCBCDACBCBBCDBCBCACABBABCAABABDABBBBBBBCCCAAACBBACBCBCCABCAAABCBCBACABBBBCBDDBBBAACC";
 
-    suse::summary_selector<int_type> correct_selector("A(B*C)*D", input.size() * 2, 100);
-    suse::summary_selector<int_type> selector("A(B*C)*D", input.size() * 2, 100, input.size() * 2);
+    suse::summary_selector_count<int_type> correct_selector("A(B*C)*D", input.size() * 2, 100);
+    suse::summary_selector_count<int_type> selector("A(B*C)*D", input.size() * 2, 100, input.size() * 2);
 
     for (std::size_t idx = 0; auto c : input) {
       selector.process_event({c, idx++});
@@ -192,8 +192,8 @@ TEST_SUITE("suse::summary_selector") {
     using int_type = boost::multiprecision::uint128_t;
     const std::string_view input = "BBBABBCBCBBACABABCCCBBACBABBACABBBCDCBCCBAABBABACBADBDCBCBAABBACDABAACBACBADCBCDBBDBBACBABAACBDCABBBABBBACCBCBBCDAACCBBBBAABADACBABCAACAABBBACBBDACBBBCBACACBACBCBBDAABBBABBCDCACABACBABBBBBCCBBACACBBAAACCBBAAABBAAABCACCABCABABABCACBBABBCBABCBCCBCCCAACBAABCCDBDCCBAABCCABBCBBBBBCCBCBABCBBCABCCBABAAABABBBBBACBBBBBCABBCBBACCCAABBABCDCBADBAABAABBBBCDBBACCBCBBCBABCDBBBBBCCAAACCBBCBCBCCAABADBABAACBBDDACBBABCABABABADACCBBBBABBBBBBCBBCBACABDABACACDCBBABBCBDBBBBBBBBDCABAACBCBBBCABCBBACCCBBCCBCBABAAABADBBCBABABBCCBABBBABCACCBBACBBDBBCABCCADBCCBBCBBACCBCABAAACCABAACBBBBDCBDBCACBBBBAACCABBBBAABABCCBBCABABACBBDBACABBBBABCDABCAAAAACCBBBBCBABBDCABBDBCBBCBAAAABBBCBBBBBCBBBACCBBCCBBCDABCABDCABBBCCBCAADCBADAADBBBACBCCABBBCCCAACCBBBBCBBBBACBABABBABBCCAACCAAACBCCAACCBBBCDBDCBCACBBACBCBBCBBACAAABBBBDCBABBBCBDCACCBDBAAACBBACABABBBACCACCBBCBACDCCCBCDCBCDACBCBBCDBCBCACABBABCAABABDABBBBBBBCCCAAACBBACBCBCCABCAAABCBCBACABBBBCBDDBBBAACC";
 
-    suse::summary_selector<int_type> correct_selector("A(B*C)*D", input.size() * 2, 100);
-    suse::summary_selector<int_type> selector("A(B*C)*D", input.size() * 2, 100, input.size() * 2);
+    suse::summary_selector_count<int_type> correct_selector("A(B*C)*D", input.size() * 2, 100);
+    suse::summary_selector_count<int_type> selector("A(B*C)*D", input.size() * 2, 100, input.size() * 2);
 
     for (std::size_t idx = 0; auto c : input) {
       selector.process_event({c, idx++});

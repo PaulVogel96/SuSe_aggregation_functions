@@ -3,7 +3,7 @@
 
 #include "event.hpp"
 #include "execution_state_counter.hpp"
-#include "summary_selector.hpp"
+#include "summary_selector_count.hpp"
 
 #include <optional>
 #include <random>
@@ -17,7 +17,7 @@ inline auto fifo = [](auto...) -> std::size_t {
   return 0;
 };
 
-inline auto random = []<typename counter_type>(const summary_selector<counter_type> &selector, const event &) {
+inline auto random = []<typename counter_type>(const summary_selector_count<counter_type> &selector, const event &) {
   static std::mt19937 random_gen(std::random_device{}());
   std::uniform_int_distribution<std::size_t> dist(0, selector.cached_events().size() - 1);
 
@@ -26,7 +26,7 @@ inline auto random = []<typename counter_type>(const summary_selector<counter_ty
 
 template <typename counter_type, typename factor_type>
 class suse {
-  using selector_type = summary_selector<counter_type>;
+  using selector_type = summary_selector_count<counter_type>;
   using state_counter_type = execution_state_counter<counter_type>;
 
 public:
