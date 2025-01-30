@@ -1,7 +1,7 @@
 /*
-	Never include directly!
-	This is included by summary_selector_count.hpp and only exists to split
-	interface and implementation despite the template.
+        Never include directly!
+        This is included by summary_selector_base.hpp and only exists to split
+        interface and implementation despite the template.
 */
 
 #include "regex.hpp"
@@ -11,38 +11,27 @@
 namespace suse {
 
 template <typename counter_type>
-summary_selector_count<counter_type>::summary_selector_count(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live) : automaton_{parse_regex(query)},
-                                                                                                                                                             per_character_edges_{compute_edges_per_character(automaton_)},
-                                                                                                                                                             time_to_live_{time_to_live},
-                                                                                                                                                             cache_{},
-                                                                                                                                                             total_counter_{automaton_.number_of_states()},
-                                                                                                                                                             total_detected_counter_{automaton_.number_of_states()},
-                                                                                                                                                             active_window_{create_window_info(time_window_size)} {
-  cache_.reserve(summary_size);
-}
-
-template <typename counter_type>
-counter_type summary_selector_count<counter_type>::number_of_contained_complete_matches() const {
+counter_type summary_selector_base<counter_type>::number_of_contained_complete_matches() const {
   return number_of_complete_matches(total_counter_);
 }
 
 template <typename counter_type>
-counter_type summary_selector_count<counter_type>::number_of_contained_partial_matches() const {
+counter_type summary_selector_base<counter_type>::number_of_contained_partial_matches() const {
   return number_of_partial_matches(total_counter_);
 }
 
 template <typename counter_type>
-counter_type summary_selector_count<counter_type>::number_of_detected_complete_matches() const {
+counter_type summary_selector_base<counter_type>::number_of_detected_complete_matches() const {
   return number_of_complete_matches(total_detected_counter_);
 }
 
 template <typename counter_type>
-counter_type summary_selector_count<counter_type>::number_of_detected_partial_matches() const {
+counter_type summary_selector_base<counter_type>::number_of_detected_partial_matches() const {
   return number_of_partial_matches(total_detected_counter_);
 }
 
 template <typename counter_type>
-counter_type summary_selector_count<counter_type>::number_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
+counter_type summary_selector_base<counter_type>::number_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
   assert(counter.size() == automaton.number_of_states());
 
   counter_type sum{0};
@@ -55,7 +44,7 @@ counter_type summary_selector_count<counter_type>::number_of_complete_matches(co
 }
 
 template <typename counter_type>
-counter_type summary_selector_count<counter_type>::number_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
+counter_type summary_selector_base<counter_type>::number_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
   assert(counter.size() == automaton.number_of_states());
 
   counter_type sum{0};
@@ -68,14 +57,14 @@ counter_type summary_selector_count<counter_type>::number_of_partial_matches(con
 }
 
 template <typename counter_type>
-template <eviction_strategy<summary_selector_count<counter_type>> strategy_type>
-void summary_selector_count<counter_type>::process_event(const event &new_event, const strategy_type &strategy) {
+template <eviction_strategy<summary_selector_base<counter_type>> strategy_type>
+void summary_selector_base<counter_type>::process_event(const event &new_event, const strategy_type &strategy) {
   current_time_ = new_event.timestamp;
   update_window(active_window_, new_event.timestamp);
   purge_expired();
 
   const auto select_idx_to_evict = [&]() -> std::optional<std::size_t> {
-    if constexpr (callable_eviction_strategy<strategy_type, summary_selector_count>)
+    if constexpr (callable_eviction_strategy<strategy_type, summary_selector_base>)
       return strategy(*this, new_event);
     else
       return strategy.select(*this, new_event);
@@ -91,34 +80,12 @@ void summary_selector_count<counter_type>::process_event(const event &new_event,
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::process_event(const event &new_event) {
+void summary_selector_base<counter_type>::process_event(const event &new_event) {
   process_event(new_event, [](auto...) { return std::nullopt; });
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::remove_event(std::size_t cache_index) {
-  assert(cache_index < cache_.size());
-
-  total_counter_ -= cache_[cache_index].state_counter;
-  const auto removed_timestamp = timestamp_at(cache_index);
-  if (cache_index < active_window_.start_idx)
-    --active_window_.start_idx;
-
-  cache_.erase(cache_.begin() + cache_index);
-
-  if (cache_.empty()) {
-    active_window_.start_idx = 0;
-    reset_counters(active_window_);
-    return;
-  }
-
-  replay_affected_range(cache_index, removed_timestamp);
-  if (in_shared_window(current_time_, removed_timestamp))
-    replay_time_window(active_window_, std::span{cache_.begin() + active_window_.start_idx, cache_.end()});
-}
-
-template <typename counter_type>
-void summary_selector_count<counter_type>::replay_affected_range(std::size_t removed_idx, std::size_t removed_timestamp) {
+void summary_selector_base<counter_type>::replay_affected_range(std::size_t removed_idx, std::size_t removed_timestamp) {
   auto replay_start_idx = removed_idx < time_window_size() ? 0 : removed_idx - time_window_size();
   while (replay_start_idx < cache_.size() && !in_shared_window(removed_timestamp, timestamp_at(replay_start_idx)))
     ++replay_start_idx;
@@ -164,32 +131,12 @@ void summary_selector_count<counter_type>::replay_affected_range(std::size_t rem
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::add_event(const event &new_event) {
-  auto global_counter_change = advance(active_window_.total_counter, per_character_edges_, new_event.type);
-  active_window_.total_counter += global_counter_change;
-  total_counter_ += global_counter_change;
-  total_detected_counter_ += global_counter_change;
-
-  const auto active_window_size = cache_.size() - active_window_.start_idx;
-  for (std::size_t i = 0; i < active_window_size; ++i) {
-    const auto cache_idx = active_window_.start_idx + i;
-
-    const auto local_change = advance(active_window_.per_event_counters[i], per_character_edges_, new_event.type);
-    cache_[cache_idx].state_counter += local_change;
-    active_window_.per_event_counters[i] += local_change;
-  }
-
-  active_window_.per_event_counters.push_back(global_counter_change);
-  cache_.emplace_back(new_event, std::move(global_counter_change));
-}
-
-template <typename counter_type>
-void summary_selector_count<counter_type>::purge_expired() {
+void summary_selector_base<counter_type>::purge_expired() {
   std::size_t purge_until = 0;
   while (purge_until < cache_.size() && current_time() - cache_[purge_until].cached_event.timestamp > time_to_live_) {
     total_counter_ -= cache_[purge_until].state_counter;
     const auto removed_timestamp = timestamp_at(purge_until);
-    cache_[purge_until].cached_event.timestamp = std::numeric_limits<std::size_t>::max(); //dirty hack to make the replay ignore this event
+    cache_[purge_until].cached_event.timestamp = std::numeric_limits<std::size_t>::max(); // dirty hack to make the replay ignore this event
     std::fill(cache_[purge_until].state_counter.begin(), cache_[purge_until].state_counter.end(), 0);
     replay_affected_range(purge_until + 1, removed_timestamp);
     ++purge_until;
@@ -215,7 +162,7 @@ void summary_selector_count<counter_type>::purge_expired() {
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::update_window(window_info &window, std::size_t timestamp) {
+void summary_selector_base<counter_type>::update_window(window_info &window, std::size_t timestamp) {
   const auto &initial_state = automaton_.states()[automaton_.initial_state_id()];
 
   bool removed_initiator = false;
@@ -230,12 +177,12 @@ void summary_selector_count<counter_type>::update_window(window_info &window, st
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::replay_time_window(window_info &window) const {
+void summary_selector_base<counter_type>::replay_time_window(window_info &window) const {
   replay_time_window(window, std::span{cache_.begin() + window.start_idx, window.per_event_counters.size()});
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::replay_time_window(window_info &window, std::span<const cache_entry> events) const {
+void summary_selector_base<counter_type>::replay_time_window(window_info &window, std::span<const cache_entry> events) const {
   reset_counters(window);
 
   for (std::size_t i = 0; i < events.size(); ++i) {
@@ -251,7 +198,7 @@ void summary_selector_count<counter_type>::replay_time_window(window_info &windo
 }
 
 template <typename counter_type>
-auto summary_selector_count<counter_type>::create_window_info(std::size_t window_size) const {
+auto summary_selector_base<counter_type>::create_window_info(std::size_t window_size) const {
   window_info wnd{
       execution_state_counter<counter_type>{automaton_.number_of_states()},
       ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{automaton_.number_of_states()}},
@@ -262,41 +209,27 @@ auto summary_selector_count<counter_type>::create_window_info(std::size_t window
 }
 
 template <typename counter_type>
-void summary_selector_count<counter_type>::reset_counters(window_info &window) const {
+void summary_selector_base<counter_type>::reset_counters(window_info &window) const {
   window.total_counter *= 0; // performance!
   window.total_counter[automaton_.initial_state_id()] = 1;
   window.per_event_counters.clear();
 }
 
 template <typename counter_type>
-std::size_t summary_selector_count<counter_type>::timestamp_at(std::size_t cache_idx) const {
+std::size_t summary_selector_base<counter_type>::timestamp_at(std::size_t cache_idx) const {
   assert(cache_idx < cache_.size());
 
   return cache_[cache_idx].cached_event.timestamp;
 }
 
 template <typename counter_type>
-bool summary_selector_count<counter_type>::in_shared_window(std::size_t timestamp0, std::size_t timestamp1) const {
+bool summary_selector_base<counter_type>::in_shared_window(std::size_t timestamp0, std::size_t timestamp1) const {
   const auto time_window_size = active_window_.per_event_counters.capacity();
 
   if (timestamp1 > timestamp0)
     std::swap(timestamp0, timestamp1);
 
   return timestamp0 - timestamp1 <= time_window_size;
-}
-
-template <typename counter_type>
-bool operator==(const summary_selector_count<counter_type> &lhs, const summary_selector_count<counter_type> &rhs) {
-  if (lhs.per_character_edges_ != rhs.per_character_edges_)
-    return false;
-  if (lhs.cache_ != rhs.cache_)
-    return false;
-  if (lhs.total_counter_ != rhs.total_counter_)
-    return false;
-  if (lhs.current_time_ != rhs.current_time_)
-    return false;
-
-  return lhs.active_window_ == rhs.active_window_;
 }
 
 } // namespace suse
