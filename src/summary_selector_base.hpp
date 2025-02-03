@@ -98,46 +98,6 @@ public:
       return current_time_; 
   }
 
-  counter_type number_of_contained_complete_matches() const {
-    return number_of_complete_matches(total_counter_);
-  }
-
-  counter_type number_of_contained_partial_matches() const {
-    return number_of_partial_matches(total_counter_);
-  }
-
-  counter_type number_of_detected_complete_matches() const {
-    return number_of_complete_matches(total_detected_counter_);
-  }
-
-  counter_type number_of_detected_partial_matches() const {
-    return number_of_partial_matches(total_detected_counter_);
-  }
-
-  counter_type number_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
-    assert(counter.size() == automaton.number_of_states());
-
-    counter_type sum{0};
-    for (std::size_t i = 0; i < counter.size(); ++i) {
-      if (automaton_.states()[i].is_final)
-        sum += counter[i];
-    }
-
-    return sum;
-  }
-
-  counter_type number_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
-    assert(counter.size() == automaton.number_of_states());
-
-    counter_type sum{0};
-    for (std::size_t i = 0; i < counter.size(); ++i) {
-      if (!automaton_.states()[i].is_final)
-        sum += counter[i];
-    }
-
-    return sum;
-  }
-
   const auto &automaton() const { 
       return automaton_; 
   }

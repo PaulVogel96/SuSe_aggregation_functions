@@ -1,12 +1,12 @@
-#ifndef SUSE_SUMMARY_SELECTOR_COUNT_HPP
-#define SUSE_SUMMARY_SELECTOR_COUNT_HPP
+#ifndef SUSE_SUMMARY_SELECTOR_SUM_HPP
+#define SUSE_SUMMARY_SELECTOR_SUM_HPP
 
-#include "summary_selector_base.hpp"
 #include "edgelist.hpp"
 #include "event.hpp"
 #include "execution_state_counter.hpp"
 #include "nfa.hpp"
 #include "ring_buffer.hpp"
+#include "summary_selector_base.hpp"
 
 #include <concepts>
 #include <limits>
@@ -21,9 +21,9 @@
 namespace suse {
 
 template <typename counter_type>
-class summary_selector_count : public summary_selector_base<counter_type> {
+class summary_selector_sum : public summary_selector_base<counter_type> {
 public:
-  summary_selector_count(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max())
+  summary_selector_sum(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max())
       : summary_selector_base<counter_type>(query, summary_size, time_window_size, time_to_live) {}
 
   void remove_event(std::size_t cache_index) override {
@@ -106,8 +106,7 @@ public:
     return sum;
   }
 
-
-  friend bool operator==(const summary_selector_count &lhs, const summary_selector_count &rhs) {
+  friend bool operator==(const summary_selector_sum &lhs, const summary_selector_sum &rhs) {
     if (lhs.per_character_edges_ != rhs.per_character_edges_)
       return false;
     if (lhs.cache_ != rhs.cache_)
