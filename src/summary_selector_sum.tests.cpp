@@ -17,6 +17,6 @@ TEST_SUITE("suse::summary_selector_sum function") {
       selector.process_event({event_type, idx});
     }
     std::cout << std::endl;
-    CHECK(selector.number_of_contained_complete_matches() == 140);
+    CHECK(selector.sum_of_contained_complete_matches() == 140);
   }
 }

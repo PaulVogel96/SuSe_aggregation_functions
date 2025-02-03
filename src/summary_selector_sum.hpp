@@ -66,23 +66,23 @@ public:
     this->cache_.emplace_back(new_event, std::move(global_counter_change));
   }
 
-  counter_type number_of_contained_complete_matches() const {
-    return number_of_complete_matches(this->total_counter_);
+  counter_type sum_of_contained_complete_matches() const {
+    return sum_of_complete_matches(this->total_counter_);
   }
 
-  counter_type number_of_contained_partial_matches() const {
-    return number_of_partial_matches(this->total_counter_);
+  counter_type sum_of_contained_partial_matches() const {
+    return sum_of_partial_matches(this->total_counter_);
   }
 
-  counter_type number_of_detected_complete_matches() const {
-    return number_of_complete_matches(this->total_detected_counter_);
+  counter_type sum_of_detected_complete_matches() const {
+    return sum_of_complete_matches(this->total_detected_counter_);
   }
 
-  counter_type number_of_detected_partial_matches() const {
-    return number_of_partial_matches(this->total_detected_counter_);
+  counter_type sum_of_detected_partial_matches() const {
+    return sum_of_partial_matches(this->total_detected_counter_);
   }
 
-  counter_type number_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
+  counter_type sum_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
     assert(counter.size() == automaton.number_of_states());
 
     counter_type sum{0};
@@ -94,7 +94,7 @@ public:
     return sum;
   }
 
-  counter_type number_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
+  counter_type sum_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
     assert(counter.size() == automaton.number_of_states());
 
     counter_type sum{0};
