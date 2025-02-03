@@ -1,6 +1,5 @@
 #include "eviction_strategies.hpp"
 #include "summary_selector_base.hpp"
-#include "summary_selector_base_impl.hpp"
 #include "summary_selector_count.hpp"
 
 #include <doctest/doctest.h>
