@@ -106,6 +106,19 @@ public:
       return active_window_.per_event_counters.capacity(); 
   }
 
+  friend bool operator==(const summary_selector_base<counter_type> &lhs, const summary_selector_base<counter_type> &rhs) {
+    if (lhs.per_character_edges_ != rhs.per_character_edges_)
+    return false;
+    if (lhs.cache_ != rhs.cache_)
+    return false;
+    if (lhs.total_counter_ != rhs.total_counter_)
+    return false;
+    if (lhs.current_time_ != rhs.current_time_)
+    return false;
+
+    return lhs.active_window_ == rhs.active_window_;
+  }
+
 protected:
   nfa automaton_;
   edgelist per_character_edges_;

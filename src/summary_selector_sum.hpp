@@ -105,19 +105,6 @@ public:
 
     return sum;
   }
-
-  friend bool operator==(const summary_selector_sum &lhs, const summary_selector_sum &rhs) {
-    if (lhs.per_character_edges_ != rhs.per_character_edges_)
-      return false;
-    if (lhs.cache_ != rhs.cache_)
-      return false;
-    if (lhs.total_counter_ != rhs.total_counter_)
-      return false;
-    if (lhs.current_time_ != rhs.current_time_)
-      return false;
-
-    return lhs.active_window_ == rhs.active_window_;
-  }
 };
 
 } // namespace suse
