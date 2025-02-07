@@ -13,6 +13,11 @@ struct event {
 
 
   friend constexpr auto operator<=>(const event &, const event &) = default;
+
+  friend std::ostream &operator<<(std::ostream &os, const event &e) {
+    os << "event: " << "[Type:" << e.type << "; Value:" << e.value << "; Timestamp: " << e.timestamp << "]";
+    return os;
+  }
 };
 
 inline std::istream &operator>>(std::istream &in, event &e) {

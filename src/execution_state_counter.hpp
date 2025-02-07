@@ -49,6 +49,13 @@ public:
 
   friend auto operator<=>(const execution_state_counter &, const execution_state_counter &) = default;
 
+  friend std::ostream &operator<<(std::ostream &os, const execution_state_counter &c) {
+    for (size_t i = 0; i < c.size(); i++) {
+      os << c[i] << std::endl;
+    }
+    return os;
+  }
+
 private:
   std::vector<underlying_counter_type> counters_;
 };

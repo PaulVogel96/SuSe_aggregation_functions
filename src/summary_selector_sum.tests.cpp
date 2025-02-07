@@ -13,8 +13,8 @@ TEST_SUITE("suse::summary_selector_sum function") {
       std::size_t event_type_index = idx;
       std::size_t event_value_index = idx + 1;
       auto event_type = stream[event_type_index];
-      auto event_value = stream[event_value_index];
-      selector.process_event({event_type, event_value, idx});
+      int event_value = stream[event_value_index] - '0'; //convert char to int
+      selector.process_event({event_type, event_value, idx / 2});
     }
     std::cout << std::endl;
     CHECK(selector.sum_of_contained_complete_matches() == 140);

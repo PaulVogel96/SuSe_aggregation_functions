@@ -48,9 +48,16 @@ public:
   }
 
   void add_event(const event &new_event) override {
+    std::cout << "adding new event: " << new_event << std::endl;
     auto global_counter_change = advance(this->active_window_.total_counter, this->per_character_edges_, new_event.type);
+    std::cout << "global_counter_change: " << std::endl << global_counter_change << std::endl;
+
     this->active_window_.total_counter += global_counter_change;
+
+    std::cout << "total_counter before: " << std::endl << this->total_counter_ << std::endl;
     this->total_counter_ += global_counter_change;
+    std::cout << "total_counter after: " << std::endl << this->total_counter_ << std::endl;
+
     this->total_detected_counter_ += global_counter_change;
 
     const auto active_window_size = this->cache_.size() - this->active_window_.start_idx;
