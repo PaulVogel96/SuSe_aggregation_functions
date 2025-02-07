@@ -7,18 +7,18 @@
 #include <unordered_map>
 
 TEST_SUITE("suse::eviction_strategies") {
-  TEST_CASE("fifo") {
-    suse::summary_selector_count<int> selector{"abc", 3, 3};
+    TEST_CASE("fifo") {
+        suse::summary_selector_count<int> selector{"abc", 3, 3};
 
-    const std::string_view input = "abcdefghijklmnopqrstuvwxyz";
+        const std::string_view input = "abcdefghijklmnopqrstuvwxyz";
 
-    for (std::size_t idx = 0; auto c : input)
-      selector.process_event({c, 0, idx++}, suse::eviction_strategies::fifo);
+        for (std::size_t idx = 0; auto c : input)
+            selector.process_event({c, 0, idx++}, suse::eviction_strategies::fifo);
 
-    suse::summary_selector_count<int> correct_selector{"abc", 3, 3};
-    for (std::size_t idx = 23; auto c : input.substr(23))
-      correct_selector.process_event({c, 0, idx++});
+        suse::summary_selector_count<int> correct_selector{"abc", 3, 3};
+        for (std::size_t idx = 23; auto c : input.substr(23))
+            correct_selector.process_event({c, 0, idx++});
 
-    CHECK(selector == correct_selector);
-  }
+        CHECK(selector == correct_selector);
+    }
 }
