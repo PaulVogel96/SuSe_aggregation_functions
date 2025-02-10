@@ -21,10 +21,10 @@
 namespace suse {
 
 template <typename counter_type>
-class summary_selector_count : public summary_selector_base<counter_type> {
+class summary_selector_count : public summary_selector_base<counter_type, window_info<counter_type>> {
   public:
     summary_selector_count(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max())
-        : summary_selector_base<counter_type>(query, summary_size, time_window_size, time_to_live) {}
+        : summary_selector_base<counter_type, window_info<counter_type>>(query, summary_size, time_window_size, time_to_live) {}
 
     void remove_event(std::size_t cache_index) override {
         assert(cache_index < this->cache_.size());

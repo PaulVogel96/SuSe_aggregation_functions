@@ -17,16 +17,16 @@ inline auto fifo = [](const auto &cache, const auto &event) -> std::size_t {
     return 0;
 };
 
-inline auto random = []<typename counter_type>(const summary_selector_base<counter_type> &selector, const event &) -> std::size_t {
+inline auto random = []<typename counter_type, typename window_info_type>(const summary_selector_base<counter_type, window_info_type> &selector, const event &) -> std::size_t {
     static std::mt19937 random_gen(std::random_device{}());
     std::uniform_int_distribution<std::size_t> dist(0, selector.cached_events().size() - 1);
 
     return dist(random_gen);
 };
 
-template <typename counter_type, typename factor_type>
+template <typename counter_type, typename factor_type, typename window_info_type>
 class suse {
-    using selector_type = summary_selector_base<counter_type>;
+    using selector_type = summary_selector_base<counter_type, window_info_type>;
     using state_counter_type = execution_state_counter<counter_type>;
 
   public:

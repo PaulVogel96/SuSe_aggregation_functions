@@ -36,6 +36,24 @@ template <typename T, typename cache_type>
 concept eviction_strategy = callable_eviction_strategy<T, cache_type> || eviction_strategy_object<T, cache_type>;
 
 template <typename counter_type>
+struct window_info {
+    execution_state_counter<counter_type> total_counter;
+    suse::ring_buffer<execution_state_counter<counter_type>> per_event_counters;
+    std::size_t start_idx;
+
+    window_info(execution_state_counter<counter_type> total_counter_,
+        suse::ring_buffer<execution_state_counter<counter_type>> per_event_counters_,
+        std::size_t start_idx_)
+        : total_counter(std::move(total_counter_)),
+          per_event_counters(std::move(per_event_counters_)),
+          start_idx(start_idx_) {
+    }
+
+    friend auto operator<=>(const window_info &, const window_info &) = default;
+    virtual ~window_info() = default;
+};
+
+template <typename counter_type, typename window_info_type>
 class summary_selector_base {
   public:
     summary_selector_base(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live) : automaton_{parse_regex(query)},
@@ -50,7 +68,7 @@ class summary_selector_base {
 
     virtual ~summary_selector_base() = default;
 
-    template <eviction_strategy<summary_selector_base<counter_type>> strategy_type>
+    template <eviction_strategy<summary_selector_base<counter_type, window_info_type>> strategy_type>
     void process_event(const event &new_event, const strategy_type &strategy) {
         current_time_ = new_event.timestamp;
         update_window(active_window_, new_event.timestamp);
@@ -106,7 +124,7 @@ class summary_selector_base {
         return active_window_.per_event_counters.capacity();
     }
 
-    friend bool operator==(const summary_selector_base<counter_type> &lhs, const summary_selector_base<counter_type> &rhs) {
+    friend bool operator==(const summary_selector_base<counter_type, window_info_type> &lhs, const summary_selector_base<counter_type, window_info_type> &rhs) {
         if (lhs.per_character_edges_ != rhs.per_character_edges_)
             return false;
         if (lhs.cache_ != rhs.cache_)
@@ -131,15 +149,11 @@ class summary_selector_base {
     };
     std::vector<cache_entry> cache_;
 
-    struct window_info {
-        execution_state_counter<counter_type> total_counter;
-        suse::ring_buffer<execution_state_counter<counter_type>> per_event_counters;
-        std::size_t start_idx;
-        friend auto operator<=>(const window_info &, const window_info &) = default;
-    };
+    window_info_type active_window_;
+    static_assert(std::is_base_of_v<window_info<counter_type>, window_info_type>,
+                  "window_info_type must derive from window_info");
 
     execution_state_counter<counter_type> total_counter_, total_detected_counter_;
-    window_info active_window_;
 
     std::size_t current_time_{0};
 
@@ -174,7 +188,7 @@ class summary_selector_base {
         }
     }
 
-    void update_window(window_info &window, std::size_t timestamp) {
+    void update_window(window_info_type &window, std::size_t timestamp) {
         const auto &initial_state = automaton_.states()[automaton_.initial_state_id()];
 
         bool removed_initiator = false;
@@ -188,11 +202,11 @@ class summary_selector_base {
             replay_time_window(window);
     }
 
-    void replay_time_window(window_info &window) const {
+    void replay_time_window(window_info_type &window) const {
         replay_time_window(window, std::span{cache_.begin() + window.start_idx, window.per_event_counters.size()});
     }
 
-    void replay_time_window(window_info &window, std::span<const cache_entry> events) const {
+    void replay_time_window(window_info_type &window, std::span<const cache_entry> events) const {
         reset_counters(window);
 
         for (std::size_t i = 0; i < events.size(); ++i) {
@@ -252,8 +266,8 @@ class summary_selector_base {
         }
     }
 
-    auto create_window_info(std::size_t window_size) const {
-        window_info wnd{
+    virtual window_info<counter_type> create_window_info(std::size_t window_size) const {
+        window_info<counter_type> wnd{
             execution_state_counter<counter_type>{automaton_.number_of_states()},
             ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{automaton_.number_of_states()}},
             0};
@@ -262,7 +276,7 @@ class summary_selector_base {
         return wnd;
     }
 
-    void reset_counters(window_info &window) const {
+    void reset_counters(window_info_type &window) const {
         window.total_counter *= 0; // performance!
         window.total_counter[automaton_.initial_state_id()] = 1;
         window.per_event_counters.clear();

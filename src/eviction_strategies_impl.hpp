@@ -10,8 +10,8 @@
 
 namespace suse::eviction_strategies {
 
-template <typename counter_type, typename factor_type>
-suse<counter_type, factor_type>::suse(const selector_type &selector, const std::unordered_map<char, factor_type> &probabilities) {
+template <typename counter_type, typename factor_type, typename window_info_type>
+suse<counter_type, factor_type, window_info_type>::suse(const selector_type &selector, const std::unordered_map<char, factor_type> &probabilities) {
     state_change identity_factors{};
     for (std::size_t state_id = 0; state_id < selector.automaton().number_of_states(); ++state_id) {
         execution_state_counter<factor_type> factors{selector.automaton().number_of_states()};
@@ -26,8 +26,8 @@ suse<counter_type, factor_type>::suse(const selector_type &selector, const std::
     }
 }
 
-template <typename counter_type, typename factor_type>
-auto suse<counter_type, factor_type>::determine_followup(const state_change &previous, const selector_type &selector, const std::unordered_map<char, factor_type> &probabilities) const -> state_change {
+template <typename counter_type, typename factor_type, typename window_info_type>
+auto suse<counter_type, factor_type, window_info_type>::determine_followup(const state_change &previous, const selector_type &selector, const std::unordered_map<char, factor_type> &probabilities) const -> state_change {
     const auto &automaton = selector.automaton();
 
     auto next = previous;
@@ -43,8 +43,8 @@ auto suse<counter_type, factor_type>::determine_followup(const state_change &pre
     return next;
 }
 
-template <typename counter_type, typename factor_type>
-std::optional<std::size_t> suse<counter_type, factor_type>::select(const selector_type &selector, const event &new_event) const {
+template <typename counter_type, typename factor_type, typename window_info_type>
+std::optional<std::size_t> suse<counter_type, factor_type, window_info_type>::select(const selector_type &selector, const event &new_event) const {
     const auto is_initiator = [&](char symbol) {
         const auto &automaton = selector.automaton();
         const auto &initial_state = automaton.states()[automaton.initial_state_id()];
@@ -95,8 +95,8 @@ std::optional<std::size_t> suse<counter_type, factor_type>::select(const selecto
     return std::nullopt;
 }
 
-template <typename counter_type, typename factor_type>
-factor_type suse<counter_type, factor_type>::apply(const state_counter_type &counts, const execution_state_counter<factor_type> &factors) const {
+template <typename counter_type, typename factor_type, typename window_info_type>
+factor_type suse<counter_type, factor_type, window_info_type>::apply(const state_counter_type &counts, const execution_state_counter<factor_type> &factors) const {
     const auto multiply = [](const factor_type &factor, const counter_type &counter) {
         return factor * static_cast<factor_type>(counter);
     };
@@ -104,8 +104,8 @@ factor_type suse<counter_type, factor_type>::apply(const state_counter_type &cou
     return std::inner_product(factors.begin(), factors.end(), counts.begin(), factor_type{0}, std::plus<>{}, multiply);
 }
 
-template <typename counter_type, typename factor_type>
-factor_type suse<counter_type, factor_type>::current_benefit(const selector_type &selector, const state_counter_type &counts) const {
+template <typename counter_type, typename factor_type, typename window_info_type>
+factor_type suse<counter_type, factor_type, window_info_type>::current_benefit(const selector_type &selector, const state_counter_type &counts) const {
     factor_type sum{};
     for (std::size_t idx = 0; idx < counts.size(); ++idx) {
         if (selector.automaton().states()[idx].is_final)
@@ -114,8 +114,8 @@ factor_type suse<counter_type, factor_type>::current_benefit(const selector_type
     return sum;
 }
 
-template <typename counter_type, typename factor_type>
-factor_type suse<counter_type, factor_type>::expected_future_benefit(const selector_type &selector, const state_counter_type &counts, std::size_t min_remaining, std::size_t max_remaining) const {
+template <typename counter_type, typename factor_type, typename window_info_type>
+factor_type suse<counter_type, factor_type, window_info_type>::expected_future_benefit(const selector_type &selector, const state_counter_type &counts, std::size_t min_remaining, std::size_t max_remaining) const {
     const auto &min_factors = expected_change_at_distance_[min_remaining].factors_per_state;
     const auto &max_factors = expected_change_at_distance_[max_remaining].factors_per_state;
 

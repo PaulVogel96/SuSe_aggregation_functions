@@ -11,6 +11,7 @@
 #include <concepts>
 #include <limits>
 #include <optional>
+#include <memory>
 #include <span>
 #include <string_view>
 #include <unordered_map>
@@ -21,10 +22,19 @@
 namespace suse {
 
 template <typename counter_type>
-class summary_selector_sum : public summary_selector_base<counter_type> {
+struct window_info_sum : public window_info<counter_type> {
+    window_info_sum(std::size_t size) : window_info<counter_type>(size) {
+    }
+
+    execution_state_counter<counter_type> total_sum_counter;
+    suse::ring_buffer<execution_state_counter<counter_type>> per_event_sum_counters;
+};
+
+template <typename counter_type>
+class summary_selector_sum : public summary_selector_base<counter_type, window_info_sum<counter_type>> {
   public:
     summary_selector_sum(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max())
-        : summary_selector_base<counter_type>(query, summary_size, time_window_size, time_to_live) {}
+        : summary_selector_base<counter_type, window_info_sum<counter_type>>(query, summary_size, time_window_size, time_to_live) {}
 
     void remove_event(std::size_t cache_index) override {
         assert(cache_index < this->cache_.size());
@@ -57,7 +67,9 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
 
         std::cout << "total_counter before: " << std::endl
                   << this->total_counter_ << std::endl;
-        this->total_counter_ += global_counter_change;
+
+        //this->total_counter_ += global_counter_change;
+        add_for_new_matches(this->total_counter_, global_counter_change, new_event);
         std::cout << "total_counter after: " << std::endl
                   << this->total_counter_ << std::endl;
 
@@ -114,6 +126,31 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         }
 
         return sum;
+    }
+
+  private:
+    execution_state_counter<counter_type> total_sum_counter_, total_detected_sum_counter_;
+
+   window_info<counter_type> create_window_info(std::size_t window_size) const override {
+       
+        auto wnd = window_info<counter_type>{
+            execution_state_counter<counter_type>{this->automaton_.number_of_states()},
+            ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{automaton_.number_of_states()}},
+            0};
+
+        reset_counters(wnd);
+        return wnd;
+    }
+
+    void add_for_new_matches(execution_state_counter<counter_type> &counter, const execution_state_counter<counter_type> &new_matches, const event &event) {
+        assert(counter.size() == new_matches.size() == automaton.number_of_states());
+
+        for (int i = 0; i <= counter.size(); i++) {
+            std::cout << "Calculating new value for counter[" << i << "]" << std::endl;
+            std::cout << "Previous value: " << counter[i] << ", new matches: " << new_matches[i] << std::endl;
+            counter[i] = counter[i] + new_matches[i];
+            std::cout << "New value: " << counter[i] << std::endl;
+        }
     }
 };
 
