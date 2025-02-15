@@ -51,20 +51,38 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
     }
 
     void add_event(const event &new_event) override {
-        std::cout << "adding new event: " << new_event << std::endl;
+        //std::cout << "adding new event: " << new_event << std::endl;
         auto global_counter_change = advance(this->active_window_.total_counter, this->per_character_edges_, new_event.type);
-        std::cout << "global_counter_change: " << std::endl
-                  << global_counter_change << std::endl;
+        //std::cout << "global_counter_change: " << std::endl
+        //          << global_counter_change << std::endl;
 
         this->active_window_.total_counter += global_counter_change;
+        add_sum_counter_changes(
+            this->active_window_sum_extension_.total_sum_counter,
+            this->active_window_.total_counter,
+            global_counter_change,
+            new_event
+        );
 
-        std::cout << "total_counter before: " << std::endl
-                  << this->total_counter_ << std::endl;
+        //std::cout << "total_counter before: " << std::endl
+        //          << this->total_counter_ << std::endl;
         this->total_counter_ += global_counter_change;
-        std::cout << "total_counter after: " << std::endl
-                  << this->total_counter_ << std::endl;
+        add_sum_counter_changes(
+            total_sum_counter_,
+            this->total_counter_,
+            global_counter_change,
+            new_event
+        );
+        //std::cout << "total_counter after: " << std::endl
+        //          << this->total_counter_ << std::endl;
 
         this->total_detected_counter_ += global_counter_change;
+        add_sum_counter_changes(
+            total_detected_sum_counter_,
+            this->total_detected_counter_,
+            global_counter_change,
+            new_event
+        );
 
         const auto active_window_size = this->cache_.size() - this->active_window_.start_idx;
         for (std::size_t i = 0; i < active_window_size; ++i) {
@@ -135,6 +153,17 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         window.total_sum_counter *= 0; // performance!
         window.total_sum_counter[this->automaton_.initial_state_id()] = 1;
         window.per_event_sum_counters.clear();
+    }
+
+    void add_sum_counter_changes(
+        execution_state_counter<counter_type>& sum_counter,
+        const execution_state_counter<counter_type>& number_counter,
+        const execution_state_counter<counter_type>& new_matches,
+        const event& new_event) {
+
+        assert(sum_counter.size() == automaton.number_of_states() == number_counter.size() == new_matches.size());
+        
+        sum_counter += new_matches;
     }
 };
 
