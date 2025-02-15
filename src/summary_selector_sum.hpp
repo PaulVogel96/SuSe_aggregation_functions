@@ -24,7 +24,10 @@ template <typename counter_type>
 class summary_selector_sum : public summary_selector_base<counter_type> {
   public:
     summary_selector_sum(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live = std::numeric_limits<std::size_t>::max())
-        : summary_selector_base<counter_type>(query, summary_size, time_window_size, time_to_live) {}
+        : summary_selector_base<counter_type>(query, summary_size, time_window_size, time_to_live),
+          total_sum_counter_{this->automaton_.number_of_states()},
+          total_detected_sum_counter_{this->automaton_.number_of_states()},
+          active_window_sum_extension_{create_additional_window_info(time_window_size)} {}
 
     void remove_event(std::size_t cache_index) override {
         assert(cache_index < this->cache_.size());
@@ -76,44 +79,62 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         this->cache_.emplace_back(new_event, std::move(global_counter_change));
     }
 
+    counter_type number_of_contained_complete_matches() const {
+        return this->sum_over_complete_matches(this->total_counter_);
+    }
+
+    counter_type number_of_contained_partial_matches() const {
+        return this->sum_over_partial_matches(this->total_counter_);
+    }
+
+    counter_type number_of_detected_complete_matches() const {
+        return this->sum_over_complete_matches(this->total_detected_counter_);
+    }
+
+    counter_type number_of_detected_partial_matches() const {
+        return this->sum_over_partial_matches(this->total_detected_counter_);
+    }
+
     counter_type sum_of_contained_complete_matches() const {
-        return sum_of_complete_matches(this->total_counter_);
+        return this->sum_over_complete_matches(total_sum_counter_);
     }
 
     counter_type sum_of_contained_partial_matches() const {
-        return sum_of_partial_matches(this->total_counter_);
+        return this->sum_over_partial_matches(total_sum_counter_);
     }
 
     counter_type sum_of_detected_complete_matches() const {
-        return sum_of_complete_matches(this->total_detected_counter_);
+        return this->sum_over_complete_matches(total_detected_sum_counter_);
     }
 
     counter_type sum_of_detected_partial_matches() const {
-        return sum_of_partial_matches(this->total_detected_counter_);
+        return this->sum_over_partial_matches(total_detected_sum_counter_);
     }
 
-    counter_type sum_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
-        assert(counter.size() == automaton.number_of_states());
+  private:
+    struct window_info_sum_extension {
+        execution_state_counter<counter_type> total_sum_counter;
+        suse::ring_buffer<execution_state_counter<counter_type>> per_event_sum_counters;
+        friend auto operator<=>(const window_info_sum_extension &, const window_info_sum_extension &) = default;
+    };
+    window_info_sum_extension active_window_sum_extension_;
 
-        counter_type sum{0};
-        for (std::size_t i = 0; i < counter.size(); ++i) {
-            if (this->automaton_.states()[i].is_final)
-                sum += counter[i];
-        }
+    execution_state_counter<counter_type> total_sum_counter_, total_detected_sum_counter_;
 
-        return sum;
+    auto create_additional_window_info(std::size_t window_size) const {
+        window_info_sum_extension wnd{
+            execution_state_counter<counter_type>{this->automaton_.number_of_states()},
+            ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{this->automaton_.number_of_states()}}
+        };
+
+        reset_additional_window_counters(wnd);
+        return wnd;
     }
 
-    counter_type sum_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
-        assert(counter.size() == automaton.number_of_states());
-
-        counter_type sum{0};
-        for (std::size_t i = 0; i < counter.size(); ++i) {
-            if (!this->automaton_.states()[i].is_final)
-                sum += counter[i];
-        }
-
-        return sum;
+    void reset_additional_window_counters(window_info_sum_extension &window) const {
+        window.total_sum_counter *= 0; // performance!
+        window.total_sum_counter[this->automaton_.initial_state_id()] = 1;
+        window.per_event_sum_counters.clear();
     }
 };
 

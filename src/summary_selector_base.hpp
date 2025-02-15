@@ -256,7 +256,8 @@ class summary_selector_base {
         window_info wnd{
             execution_state_counter<counter_type>{automaton_.number_of_states()},
             ring_buffer<execution_state_counter<counter_type>>{window_size, execution_state_counter<counter_type>{automaton_.number_of_states()}},
-            0};
+            0
+        };
 
         reset_counters(wnd);
         return wnd;
@@ -281,6 +282,30 @@ class summary_selector_base {
             std::swap(timestamp0, timestamp1);
 
         return timestamp0 - timestamp1 <= time_window_size;
+    }
+
+    counter_type sum_over_complete_matches(const execution_state_counter<counter_type> &counter) const {
+        assert(counter.size() == automaton.number_of_states());
+
+        counter_type sum{0};
+        for (std::size_t i = 0; i < counter.size(); ++i) {
+            if (this->automaton_.states()[i].is_final)
+                sum += counter[i];
+        }
+
+        return sum;
+    }
+
+    counter_type sum_over_partial_matches(const execution_state_counter<counter_type> &counter) const {
+        assert(counter.size() == automaton.number_of_states());
+
+        counter_type sum{0};
+        for (std::size_t i = 0; i < counter.size(); ++i) {
+            if (!this->automaton_.states()[i].is_final)
+                sum += counter[i];
+        }
+
+        return sum;
     }
 };
 } // namespace suse

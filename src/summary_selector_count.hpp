@@ -67,43 +67,19 @@ class summary_selector_count : public summary_selector_base<counter_type> {
     }
 
     counter_type number_of_contained_complete_matches() const {
-        return number_of_complete_matches(this->total_counter_);
+        return this->sum_over_complete_matches(this->total_counter_);
     }
 
     counter_type number_of_contained_partial_matches() const {
-        return number_of_partial_matches(this->total_counter_);
+        return this->sum_over_partial_matches(this->total_counter_);
     }
 
     counter_type number_of_detected_complete_matches() const {
-        return number_of_complete_matches(this->total_detected_counter_);
+        return this->sum_over_complete_matches(this->total_detected_counter_);
     }
 
     counter_type number_of_detected_partial_matches() const {
-        return number_of_partial_matches(this->total_detected_counter_);
-    }
-
-    counter_type number_of_complete_matches(const execution_state_counter<counter_type> &counter) const {
-        assert(counter.size() == automaton.number_of_states());
-
-        counter_type sum{0};
-        for (std::size_t i = 0; i < counter.size(); ++i) {
-            if (this->automaton_.states()[i].is_final)
-                sum += counter[i];
-        }
-
-        return sum;
-    }
-
-    counter_type number_of_partial_matches(const execution_state_counter<counter_type> &counter) const {
-        assert(counter.size() == automaton.number_of_states());
-
-        counter_type sum{0};
-        for (std::size_t i = 0; i < counter.size(); ++i) {
-            if (!this->automaton_.states()[i].is_final)
-                sum += counter[i];
-        }
-
-        return sum;
+        return this->sum_over_partial_matches(this->total_detected_counter_);
     }
 };
 
