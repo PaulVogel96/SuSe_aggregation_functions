@@ -52,33 +52,41 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
 
     void add_event(const event &new_event) override {
         auto global_change_count = advance(this->active_window_.total_counter, this->per_character_edges_, new_event.type);
-        auto global_change_sum = advance_sum(this->active_window_sum_extension_.total_sum_counter, this->per_character_edges_, new_event);
-
         this->active_window_.total_counter += global_change_count;
-        this->active_window_sum_extension_.total_sum_counter += global_change_sum;
-
         this->total_counter_ += global_change_count;
-        this->total_sum_counter_ += global_change_sum;
-
         this->total_detected_counter_ += global_change_count;
+
+        std::cout << "Sum counter before: " << std::endl
+                  << total_sum_counter_ << std::endl;
+
+        auto global_change_sum = advance_sum(this->active_window_.total_counter, this->active_window_sum_extension_.total_sum_counter, this->per_character_edges_, new_event);
+        
+        std::cout << "Applying global change " << std::endl
+                  << global_change_sum << std::endl;
+        this->active_window_sum_extension_.total_sum_counter += global_change_sum;
+        this->total_sum_counter_ += global_change_sum;
         this->total_detected_sum_counter_ += global_change_sum;
+        
+        std::cout << "Sum counter after: " << std::endl
+                  << total_sum_counter_ << std::endl;
 
-        const auto active_window_size = this->cache_.size() - this->active_window_.start_idx;
-        for (std::size_t i = 0; i < active_window_size; ++i) {
-            const auto cache_idx = this->active_window_.start_idx + i;
+        //const auto active_window_size = this->cache_.size() - this->active_window_.start_idx;
+        //for (std::size_t i = 0; i < active_window_size; ++i) {
+        //    const auto cache_idx = this->active_window_.start_idx + i;
 
-            const auto local_change_count = advance(this->active_window_.per_event_counters[i], this->per_character_edges_, new_event.type);
-            const auto local_change_sum = advance_sum(this->active_window_sum_extension_.per_event_sum_counters[i], this->per_character_edges_, new_event);
+        //    const auto local_change_count = advance(this->active_window_.per_event_counters[i], this->per_character_edges_, new_event.type);
+        //    this->cache_[cache_idx].state_counter += local_change_count;
+        //    this->active_window_.per_event_counters[i] += local_change_count;
 
-            this->cache_[cache_idx].state_counter += local_change_count;
-            this->sum_cache_[cache_idx].state_counter += local_change_sum;
-            this->active_window_.per_event_counters[i] += local_change_count;
-            this->active_window_sum_extension_.per_event_sum_counters[i] += local_change_sum;
-        }
+        //    const auto local_change_sum = advance_sum(this->active_window_.per_event_counters[i], this->active_window_sum_extension_.per_event_sum_counters[i], this->per_character_edges_, new_event);
+        //    this->sum_cache_[cache_idx].state_counter += local_change_sum;
+        //    this->active_window_sum_extension_.per_event_sum_counters[i] += local_change_sum;
+        //}
 
         this->active_window_.per_event_counters.push_back(global_change_count);
-        this->active_window_sum_extension_.per_event_sum_counters.push_back(global_change_sum);
         this->cache_.emplace_back(new_event, std::move(global_change_count));
+
+        this->active_window_sum_extension_.per_event_sum_counters.push_back(global_change_sum);
         this->sum_cache_.emplace_back(new_event, std::move(global_change_sum));
     }
 
@@ -138,7 +146,7 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
 
     void reset_additional_window_counters(window_info_sum_extension &window) const {
         window.total_sum_counter *= 0; // performance!
-        window.total_sum_counter[this->automaton_.initial_state_id()] = 1;
+        window.total_sum_counter[this->automaton_.initial_state_id()] = 0;
         window.per_event_sum_counters.clear();
     }
 
