@@ -74,4 +74,19 @@ execution_state_counter<underlying> advance(const execution_state_counter<underl
     return followup;
 }
 
+template <typename underlying>
+execution_state_counter<underlying> advance_sum(const execution_state_counter<underlying> &counter, const edgelist &per_character_edges, const event &event) {
+    auto followup = execution_state_counter<underlying>{counter.size()};
+
+    const auto sum_for = [&](auto s) {
+        for (const auto &e : per_character_edges.edges_for(s))
+            followup[e.to] += counter[e.from] * event.value;
+    };
+
+    sum_for(event.type);
+    sum_for(nfa::wildcard_symbol);
+
+    return followup;
+}
+
 } // namespace suse

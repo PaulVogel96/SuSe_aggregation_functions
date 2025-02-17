@@ -51,50 +51,35 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
     }
 
     void add_event(const event &new_event) override {
-        //std::cout << "adding new event: " << new_event << std::endl;
-        auto global_counter_change = advance(this->active_window_.total_counter, this->per_character_edges_, new_event.type);
-        //std::cout << "global_counter_change: " << std::endl
-        //          << global_counter_change << std::endl;
+        auto global_change_count = advance(this->active_window_.total_counter, this->per_character_edges_, new_event.type);
+        auto global_change_sum = advance_sum(this->active_window_sum_extension_.total_sum_counter, this->per_character_edges_, new_event);
 
-        this->active_window_.total_counter += global_counter_change;
-        add_sum_counter_changes(
-            this->active_window_sum_extension_.total_sum_counter,
-            this->active_window_.total_counter,
-            global_counter_change,
-            new_event
-        );
+        this->active_window_.total_counter += global_change_count;
+        this->active_window_sum_extension_.total_sum_counter += global_change_sum;
 
-        //std::cout << "total_counter before: " << std::endl
-        //          << this->total_counter_ << std::endl;
-        this->total_counter_ += global_counter_change;
-        add_sum_counter_changes(
-            total_sum_counter_,
-            this->total_counter_,
-            global_counter_change,
-            new_event
-        );
-        //std::cout << "total_counter after: " << std::endl
-        //          << this->total_counter_ << std::endl;
+        this->total_counter_ += global_change_count;
+        this->total_sum_counter_ += global_change_sum;
 
-        this->total_detected_counter_ += global_counter_change;
-        add_sum_counter_changes(
-            total_detected_sum_counter_,
-            this->total_detected_counter_,
-            global_counter_change,
-            new_event
-        );
+        this->total_detected_counter_ += global_change_count;
+        this->total_detected_sum_counter_ += global_change_sum;
 
         const auto active_window_size = this->cache_.size() - this->active_window_.start_idx;
         for (std::size_t i = 0; i < active_window_size; ++i) {
             const auto cache_idx = this->active_window_.start_idx + i;
 
-            const auto local_change = advance(this->active_window_.per_event_counters[i], this->per_character_edges_, new_event.type);
-            this->cache_[cache_idx].state_counter += local_change;
-            this->active_window_.per_event_counters[i] += local_change;
+            const auto local_change_count = advance(this->active_window_.per_event_counters[i], this->per_character_edges_, new_event.type);
+            const auto local_change_sum = advance_sum(this->active_window_sum_extension_.per_event_sum_counters[i], this->per_character_edges_, new_event);
+
+            this->cache_[cache_idx].state_counter += local_change_count;
+            this->sum_cache_[cache_idx].state_counter += local_change_sum;
+            this->active_window_.per_event_counters[i] += local_change_count;
+            this->active_window_sum_extension_.per_event_sum_counters[i] += local_change_sum;
         }
 
-        this->active_window_.per_event_counters.push_back(global_counter_change);
-        this->cache_.emplace_back(new_event, std::move(global_counter_change));
+        this->active_window_.per_event_counters.push_back(global_change_count);
+        this->active_window_sum_extension_.per_event_sum_counters.push_back(global_change_sum);
+        this->cache_.emplace_back(new_event, std::move(global_change_count));
+        this->sum_cache_.emplace_back(new_event, std::move(global_change_sum));
     }
 
     counter_type number_of_contained_complete_matches() const {
@@ -130,6 +115,8 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
     }
 
   private:
+    std::vector<cache_entry<counter_type>> sum_cache_;
+
     struct window_info_sum_extension {
         execution_state_counter<counter_type> total_sum_counter;
         suse::ring_buffer<execution_state_counter<counter_type>> per_event_sum_counters;
@@ -161,9 +148,11 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         const execution_state_counter<counter_type>& new_matches,
         const event& new_event) {
 
-        assert(sum_counter.size() == automaton.number_of_states() == number_counter.size() == new_matches.size());
+        assert(sum_counter.size() == this->automaton_.number_of_states() == number_counter.size() == new_matches.size());
         
-        sum_counter += new_matches;
+        for (int i = 0; i < this->automaton_.number_of_states(); i++) {
+            sum_counter[i] += new_matches[i];
+        }
     }
 };
 

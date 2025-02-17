@@ -36,6 +36,13 @@ template <typename T, typename cache_type>
 concept eviction_strategy = callable_eviction_strategy<T, cache_type> || eviction_strategy_object<T, cache_type>;
 
 template <typename counter_type>
+struct cache_entry {
+    event cached_event;
+    execution_state_counter<counter_type> state_counter;
+    friend auto operator<=>(const cache_entry &, const cache_entry &) = default;
+};
+
+template <typename counter_type>
 class summary_selector_base {
   public:
     summary_selector_base(std::string_view query, std::size_t summary_size, std::size_t time_window_size, std::size_t time_to_live) : automaton_{parse_regex(query)},
@@ -123,13 +130,7 @@ class summary_selector_base {
     nfa automaton_;
     edgelist per_character_edges_;
     std::size_t time_to_live_;
-
-    struct cache_entry {
-        event cached_event;
-        execution_state_counter<counter_type> state_counter;
-        friend auto operator<=>(const cache_entry &, const cache_entry &) = default;
-    };
-    std::vector<cache_entry> cache_;
+    std::vector<cache_entry<counter_type>> cache_;
 
     struct window_info {
         execution_state_counter<counter_type> total_counter;
@@ -192,7 +193,7 @@ class summary_selector_base {
         replay_time_window(window, std::span{cache_.begin() + window.start_idx, window.per_event_counters.size()});
     }
 
-    void replay_time_window(window_info &window, std::span<const cache_entry> events) const {
+    void replay_time_window(window_info &window, std::span<const cache_entry<counter_type>> events) const {
         reset_counters(window);
 
         for (std::size_t i = 0; i < events.size(); ++i) {
