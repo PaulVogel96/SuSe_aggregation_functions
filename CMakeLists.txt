@@ -87,8 +87,9 @@ set(suse_sources
 	src/ring_buffer.hpp
 	src/ring_buffer_impl.hpp
 
-	src/summary_selector.hpp
-	src/summary_selector_impl.hpp
+	src/summary_selector_base.hpp
+	src/summary_selector_count.hpp
+	src/summary_selector_sum.hpp
 )
 
 find_package(Boost REQUIRED)
