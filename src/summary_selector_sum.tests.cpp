@@ -30,6 +30,6 @@ TEST_SUITE("suse::summary_selector_sum function") {
             selector.process_event({event_type, event_value, idx / 2});
         }
         CHECK(selector.number_of_contained_complete_matches() == 8);
-        CHECK(selector.sum_of_contained_complete_matches() == 140);
+        CHECK(selector.sum_of_contained_complete_matches() == 110);
     }
 }

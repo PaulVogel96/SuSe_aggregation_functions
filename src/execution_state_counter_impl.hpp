@@ -80,19 +80,35 @@ execution_state_counter<underlying> advance_sum(
     const execution_state_counter<underlying> &sum_counter,
     const edgelist &per_character_edges, 
     const event &event) {
+
+    std::cout << "Calculating new Counter change for event: " << event << std::endl;
+    std::cout << "____________________________________________________________" << std::endl;
+    std::cout << "Current count counter (not advanced)" << std::endl
+              << count_counter << std::endl;
+    std::cout << "Current sum counter (not advanced)" << std::endl
+              << sum_counter << std::endl;
+
     auto followup = execution_state_counter<underlying>{count_counter.size()};
 
     const auto sum_for = [&](auto s) {
+        std::cout << "Calculating counter changes for event type: " << s << std::endl;
         for (const auto &e : per_character_edges.edges_for(s)) {
-            //std::cout << "Calculating new Counter change for event: " << event << std::endl;
-            //std::cout << "Calculation: " << sum_counter[e.from] << " + " << count_counter[e.to] << " * " << event.value << std::endl;
-            followup[e.to] += sum_counter[e.from] + count_counter[e.to] * event.value;
-            //std::cout << "Counter change: " << std::endl << followup << std::endl;
+            std::cout << "Calculating for edge from " << e.from << " to " << e.to << std::endl;
+            std::cout << "Calculation: "
+                      << "sumCounter[" << e.from << "]:" << sum_counter[e.from] << " + "
+                      << "countCounter[" << e.from << "]:" << count_counter[e.from] << " * "
+                      << "event value: " << event.value << std::endl;
+            followup[e.to] += sum_counter[e.from] + count_counter[e.from] * event.value;
+            std::cout << "Counter change: " << std::endl << followup << std::endl;
         }
+
     };
 
     sum_for(event.type);
     sum_for(nfa::wildcard_symbol);
+
+    std::cout << "Final counter change for event: " << std::endl
+              << followup << std::endl;
 
     return followup;
 }
