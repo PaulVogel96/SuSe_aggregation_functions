@@ -83,10 +83,8 @@ execution_state_counter<underlying> advance_sum(
 
     auto followup = execution_state_counter<underlying>{count_counter.size()};
     const auto sum_for = [&](auto s) {
-        for (const auto &e : per_character_edges.edges_for(s)) {
+        for (const auto &e : per_character_edges.edges_for(s)) 
             followup[e.to] += sum_counter[e.from] + count_counter[e.from] * event.value;
-        }
-
     };
 
     sum_for(event.type);
