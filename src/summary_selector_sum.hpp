@@ -141,19 +141,6 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         window.total_sum_counter[this->automaton_.initial_state_id()] = 0;
         window.per_event_sum_counters.clear();
     }
-
-    void add_sum_counter_changes(
-        execution_state_counter<counter_type>& sum_counter,
-        const execution_state_counter<counter_type>& number_counter,
-        const execution_state_counter<counter_type>& new_matches,
-        const event& new_event) {
-
-        assert(sum_counter.size() == this->automaton_.number_of_states() == number_counter.size() == new_matches.size());
-        
-        for (int i = 0; i < this->automaton_.number_of_states(); i++) {
-            sum_counter[i] += new_matches[i];
-        }
-    }
 };
 
 } // namespace suse
