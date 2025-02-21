@@ -114,6 +114,23 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         return this->sum_over_partial_matches(total_detected_sum_counter_);
     }
 
+    counter_type mean_of_contained_complete_matches() const {
+        return this->calculate_mean_over_complete_matches(total_sum_counter_, this->total_counter_);
+    }
+
+    counter_type mean_of_contained_partial_matches() const {
+        return this->calculate_mean_over_partial_matches(total_sum_counter_, this->total_counter_);
+    }
+
+    counter_type mean_of_detected_complete_matches() const {
+        return this->calculate_mean_over_complete_matches(total_detected_sum_counter_, this->total_detected_counter_);
+    }
+
+    counter_type mean_of_detected_partial_matches() const {
+        return this->calculate_mean_over_partial_matches(total_detected_sum_counter_, this->total_detected_counter_);
+    }
+
+
   private:
     std::vector<cache_entry<counter_type>> sum_cache_;
 
@@ -140,6 +157,36 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         window.total_sum_counter *= 0; // performance!
         window.total_sum_counter[this->automaton_.initial_state_id()] = 0;
         window.per_event_sum_counters.clear();
+    }
+
+    counter_type calculate_mean_over_partial_matches(const execution_state_counter<counter_type> &sum_counter, const execution_state_counter<counter_type> &count_counter) const {
+        assert(sum_counter.size() == automaton.number_of_states() == count_counter.size());
+
+        counter_type sum{0};
+        counter_type count{0};
+        for (std::size_t i = 0; i < sum_counter.size(); ++i) {
+            if (!this->automaton_.states()[i].is_final) {
+                sum += sum_counter[i];
+                count += count_counter[i];
+            }
+        }
+
+        return sum / count;
+    }
+
+    counter_type calculate_mean_over_complete_matches(const execution_state_counter<counter_type> &sum_counter, const execution_state_counter<counter_type> &count_counter) const {
+        assert(sum_counter.size() == automaton.number_of_states() == count_counter.size());
+
+        counter_type sum{0};
+        counter_type count{0};
+        for (std::size_t i = 0; i < sum_counter.size(); ++i) {
+            if (this->automaton_.states()[i].is_final) {
+                sum += sum_counter[i];
+                count += count_counter[i];
+            }
+        }
+
+        return sum / count;
     }
 };
 
