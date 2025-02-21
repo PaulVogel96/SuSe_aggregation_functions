@@ -33,15 +33,18 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
         assert(cache_index < this->cache_.size());
 
         this->total_counter_ -= this->cache_[cache_index].state_counter;
+        this->total_sum_counter_ -= this->sum_cache_[cache_index].state_counter;
         const auto removed_timestamp = this->timestamp_at(cache_index);
         if (cache_index < this->active_window_.start_idx)
             --this->active_window_.start_idx;
 
         this->cache_.erase(this->cache_.begin() + cache_index);
+        this->sum_cache_.erase(this->sum_cache_.begin() + cache_index);
 
         if (this->cache_.empty()) {
             this->active_window_.start_idx = 0;
             this->reset_counters(this->active_window_);
+            this->reset_additional_window_counters(this->active_window_sum_extension_);
             return;
         }
 
@@ -155,7 +158,6 @@ class summary_selector_sum : public summary_selector_base<counter_type> {
 
     void reset_additional_window_counters(window_info_sum_extension &window) const {
         window.total_sum_counter *= 0; // performance!
-        window.total_sum_counter[this->automaton_.initial_state_id()] = 0;
         window.per_event_sum_counters.clear();
     }
 

@@ -29,6 +29,14 @@ execution_state_counter<underlying> &execution_state_counter<underlying>::operat
 }
 
 template <typename underlying>
+execution_state_counter<underlying> &execution_state_counter<underlying>::operator*=(const execution_state_counter<underlying> &other) {
+    for (std::size_t i = 0; i < counters_.size(); ++i)
+        counters_[i] *= other.counters_[i];
+
+    return *this;
+}
+
+template <typename underlying>
 execution_state_counter<underlying> &execution_state_counter<underlying>::operator*=(const underlying &other) {
     for (std::size_t i = 0; i < counters_.size(); ++i)
         counters_[i] *= other;
@@ -93,4 +101,41 @@ execution_state_counter<underlying> advance_sum(
     return followup;
 }
 
+template <typename underlying>
+execution_state_counter<underlying> advance_mult(
+    const execution_state_counter<underlying> &count_counter,
+    const execution_state_counter<underlying> &mult_counter,
+    const edgelist &per_character_edges,
+    const event &event) {
+
+    std::cout << "Calculating new Counter change for event: " << event << std::endl;
+    std::cout << "____________________________________________________________" << std::endl;
+    std::cout << "Current count counter (not advanced)" << std::endl
+              << count_counter << std::endl;
+    std::cout << "Current mult counter (not advanced)" << std::endl
+              << mult_counter << std::endl;
+
+    auto followup = execution_state_counter<underlying>{count_counter.size()};
+    const auto mult_for = [&](auto s) {
+        std::cout << "Calculating counter changes for event type: " << s << std::endl;
+        for (const auto &e : per_character_edges.edges_for(s)) {
+            std::cout << "Calculating for edge from " << e.from << " to " << e.to << std::endl;
+            std::cout << "Calculation: "
+                      << "multCounter[" << e.from << "]:" << mult_counter[e.from] << " * "
+                      << "event value: " << event.value << " ^ " 
+                      << "countCounter[" << e.from << "]:" << count_counter[e.from] << std::endl;
+            followup[e.to] *= mult_counter[e.from] * pow(event.value, count_counter[e.from]);
+            std::cout << "Counter change: " << std::endl
+                      << followup << std::endl;
+        }
+
+    };
+
+    mult_for(event.type);
+    mult_for(nfa::wildcard_symbol);
+
+    std::cout << "Final counter change for event: " << std::endl
+              << followup << std::endl;
+    return followup;
+}
 } // namespace suse

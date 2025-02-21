@@ -5,7 +5,7 @@
 #include <doctest/doctest.h>
 
 TEST_SUITE("suse::summary_selector_sum function") {
-    TEST_CASE("Sum one addition") {
+    TEST_CASE("One addition") {
         suse::summary_selector_sum<int> selector("a(b*c)*d", 10, 10);
         std::string stream = "a3b4";
 

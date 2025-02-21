@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <cmath>
 
 #include <cstddef>
 
@@ -30,6 +31,7 @@ struct execution_state_counter {
 
     execution_state_counter &operator+=(const execution_state_counter &other);
     execution_state_counter &operator-=(const execution_state_counter &other);
+    execution_state_counter &operator*=(const execution_state_counter &other);
     execution_state_counter &operator*=(const underlying_counter_type &factor);
 
     friend execution_state_counter operator+(execution_state_counter lhs, const execution_state_counter &rhs) {
@@ -69,6 +71,9 @@ execution_state_counter<underlying_counter_type> advance(const execution_state_c
 
 template <typename underlying_counter_type>
 execution_state_counter<underlying_counter_type> advance_sum(const execution_state_counter<underlying_counter_type> &count_counter, const execution_state_counter<underlying_counter_type> &sum_counter, const edgelist &per_character_edges, const event &event);
+
+template <typename underlying_counter_type>
+execution_state_counter<underlying_counter_type> advance_mult(const execution_state_counter<underlying_counter_type> &count_counter, const execution_state_counter<underlying_counter_type> &mult_counter, const edgelist &per_character_edges, const event &event);
 } // namespace suse
 
 #include "execution_state_counter_impl.hpp"
