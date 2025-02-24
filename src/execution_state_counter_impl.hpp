@@ -116,17 +116,10 @@ execution_state_counter<underlying> advance_mult(
               << mult_counter << std::endl;
 
     auto followup = execution_state_counter<underlying>{count_counter.size()};
+    std::fill(followup.begin(), followup.end(), 1);
     const auto mult_for = [&](auto s) {
-        std::cout << "Calculating counter changes for event type: " << s << std::endl;
         for (const auto &e : per_character_edges.edges_for(s)) {
-            std::cout << "Calculating for edge from " << e.from << " to " << e.to << std::endl;
-            std::cout << "Calculation: "
-                      << "multCounter[" << e.from << "]:" << mult_counter[e.from] << " * "
-                      << "event value: " << event.value << " ^ " 
-                      << "countCounter[" << e.from << "]:" << count_counter[e.from] << std::endl;
             followup[e.to] *= mult_counter[e.from] * pow(event.value, count_counter[e.from]);
-            std::cout << "Counter change: " << std::endl
-                      << followup << std::endl;
         }
 
     };

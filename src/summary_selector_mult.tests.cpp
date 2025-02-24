@@ -19,7 +19,7 @@ TEST_SUITE("suse::summary_selector_mult function") {
     }
 
     TEST_CASE("Mult function simple") {
-        suse::summary_selector_mult<int> selector("a(b*c)*d", 10, 10);
+        suse::summary_selector_mult<boost::int32_t> selector("a(b*c)*d", 10, 10);
         std::string stream = "a3b5a2b4c2d5";
 
         for (std::size_t idx = 0; idx < stream.length(); idx += 2) {
