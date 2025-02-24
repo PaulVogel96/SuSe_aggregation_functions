@@ -48,6 +48,6 @@ TEST_SUITE("suse::summary_selector_mult function") {
         }
         CHECK(selector.number_of_contained_complete_matches() == 8);
         CHECK(selector.mult_of_contained_complete_matches() == 77760000000000);
-        CHECK(selector.geometric_mean_of_contained_complete_matches() == cpp_dec_float_50("54 .4934785300"));
+        CHECK(abs(selector.geometric_mean_of_contained_complete_matches() - cpp_dec_float_50("54.4934785300")) < cpp_dec_float_50("1e-10")); //test with small epsilon
     }
 }
