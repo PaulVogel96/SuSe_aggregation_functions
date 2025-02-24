@@ -108,13 +108,6 @@ execution_state_counter<underlying> advance_mult(
     const edgelist &per_character_edges,
     const event &event) {
 
-    std::cout << "Calculating new Counter change for event: " << event << std::endl;
-    std::cout << "____________________________________________________________" << std::endl;
-    std::cout << "Current count counter (not advanced)" << std::endl
-              << count_counter << std::endl;
-    std::cout << "Current mult counter (not advanced)" << std::endl
-              << mult_counter << std::endl;
-
     auto followup = execution_state_counter<underlying>{count_counter.size()};
     std::fill(followup.begin(), followup.end(), 1);
     const auto mult_for = [&](auto s) {
@@ -127,8 +120,6 @@ execution_state_counter<underlying> advance_mult(
     mult_for(event.type);
     mult_for(nfa::wildcard_symbol);
 
-    std::cout << "Final counter change for event: " << std::endl
-              << followup << std::endl;
     return followup;
 }
 } // namespace suse

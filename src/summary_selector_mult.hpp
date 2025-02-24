@@ -122,6 +122,22 @@ class summary_selector_mult : public summary_selector_base<counter_type> {
         return this->sum_over_partial_matches(total_detected_mult_counter_);
     }
 
+    counter_type geometric_mean_of_contained_complete_matches() const {
+        return calculate_geometric_mean_over_complete_matches(total_mult_counter_, this->total_counter_);
+    }
+
+    counter_type geometric_mean_of_contained_partial_matches() const {
+        return calculate_geometric_mean_over_partial_matches(total_mult_counter_, this->total_counter_);
+    }
+
+    counter_type geometric_mean_of_detected_complete_matches() const {
+        return calculate_geometric_mean_over_complete_matches(total_detected_mult_counter_, this->total_detected_counter_);
+    }
+
+    counter_type geometric_mean_of_detected_partial_matches() const {
+        return calculate_geometric_mean_over_partial_matches(total_detected_mult_counter_, this->total_detected_counter_);
+    }
+
   private:
     std::vector<cache_entry<counter_type>> mult_cache_;
 
@@ -146,6 +162,36 @@ class summary_selector_mult : public summary_selector_base<counter_type> {
     void reset_additional_window_counters(window_info_mult_extension &window) const {
         std::fill(window.total_mult_counter.begin(), window.total_mult_counter.end(), 1);
         window.per_event_mult_counters.clear();
+    }
+
+    counter_type calculate_geometric_mean_over_complete_matches(const execution_state_counter<counter_type>& mult_counter, const execution_state_counter<counter_type>& count_counter) const {
+        assert(mult_counter.size() == count_counter.size() == automaton.number_of_states());
+
+        counter_type multiplication{1};
+        counter_type count{0};
+        for (std::size_t i = 0; i < mult_counter.size(); ++i) {
+            if (this->automaton_.states()[i].is_final) {
+                multiplication *= mult_counter[i];
+                count += count_counter[i];
+            }
+        }
+
+        return pow(multiplication, 1/count);
+    }
+
+    counter_type calculate_geometric_mean_over_partial_matches(const execution_state_counter<counter_type> &mult_counter, const execution_state_counter<counter_type> &count_counter) const {
+        assert(mult_counter.size() == count_counter.size() == automaton.number_of_states());
+
+        counter_type multiplication{1};
+        counter_type count{0};
+        for (std::size_t i = 0; i < mult_counter.size(); ++i) {
+            if (!this->automaton_.states()[i].is_final) {
+                multiplication *= mult_counter[i];
+                count += count_counter[i];
+            }
+        }
+
+        return pow(multiplication, 1/count);
     }
 };
 
