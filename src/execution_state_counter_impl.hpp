@@ -102,7 +102,7 @@ execution_state_counter<underlying> advance_sum(
 }
 
 template <typename underlying>
-execution_state_counter<underlying> advance_mult(
+execution_state_counter<underlying> advance_prod(
     const execution_state_counter<underlying> &count_counter,
     const execution_state_counter<underlying> &mult_counter,
     const edgelist &per_character_edges,

@@ -90,7 +90,7 @@ set(suse_sources
 	src/summary_selector_base.hpp
 	src/summary_selector_count.hpp
 	src/summary_selector_sum.hpp
-	src/summary_selector_mult.hpp
+	src/summary_selector_prod.hpp
 )
 
 find_package(Boost REQUIRED)
