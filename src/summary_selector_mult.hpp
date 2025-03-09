@@ -107,19 +107,19 @@ class summary_selector_mult : public summary_selector_base<counter_type> {
     }
 
     counter_type mult_of_contained_complete_matches() const {
-        return this->sum_over_complete_matches(total_mult_counter_);
+        return mult_over_complete_matches(total_mult_counter_);
     }
 
     counter_type mult_of_contained_partial_matches() const {
-        return this->sum_over_partial_matches(total_mult_counter_);
+        return mult_over_partial_matches(total_mult_counter_);
     }
 
     counter_type mult_of_detected_complete_matches() const {
-        return this->sum_over_complete_matches(total_detected_mult_counter_);
+        return mult_over_complete_matches(total_detected_mult_counter_);
     }
 
     counter_type mult_of_detected_partial_matches() const {
-        return this->sum_over_partial_matches(total_detected_mult_counter_);
+        return mult_over_partial_matches(total_detected_mult_counter_);
     }
 
     counter_type geometric_mean_of_contained_complete_matches() const {
@@ -162,6 +162,30 @@ class summary_selector_mult : public summary_selector_base<counter_type> {
     void reset_additional_window_counters(window_info_mult_extension &window) const {
         std::fill(window.total_mult_counter.begin(), window.total_mult_counter.end(), 1);
         window.per_event_mult_counters.clear();
+    }
+
+    counter_type mult_over_complete_matches(const execution_state_counter<counter_type> &counter) const {
+        assert(counter.size() == automaton.number_of_states());
+
+        counter_type sum{1};
+        for (std::size_t i = 0; i < counter.size(); ++i) {
+            if (this->automaton_.states()[i].is_final)
+                sum *= counter[i];
+        }
+
+        return sum;
+    }
+
+    counter_type mult_over_partial_matches(const execution_state_counter<counter_type> &counter) const {
+        assert(counter.size() == automaton.number_of_states());
+
+        counter_type sum{1};
+        for (std::size_t i = 0; i < counter.size(); ++i) {
+            if (!this->automaton_.states()[i].is_final)
+                sum *= counter[i];
+        }
+
+        return sum;
     }
 
     counter_type calculate_geometric_mean_over_complete_matches(const execution_state_counter<counter_type>& mult_counter, const execution_state_counter<counter_type>& count_counter) const {
