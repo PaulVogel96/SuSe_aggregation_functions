@@ -1,3 +1,11 @@
+# SuSe: Implementing aggregation functions within the SuSe Framework
+In this repository, we publish the code results for the Study project at Humboldt University Berlin.
+
+The original code was created by Steven Purtzel and can be found here:
+https://github.com/spurtzel/SuSe
+
+Below is the original Readme.md of the project. 
+
 # SuSe: Summary Selection for Regular Expression Subsequence Aggregation over Streams
 
 ## Requirements
